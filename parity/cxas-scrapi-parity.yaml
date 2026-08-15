@@ -1,0 +1,11 @@
+version: 1
+source:
+  repository: GoogleCloudPlatform/cxas-scrapi
+  commit: 4f7b43ca6adda0acad95a7e3654eee4e2ed1438c
+modules: []
+enums: []
+cli:
+  binary: cxas
+  global_flags: [oauth-token, no-input]
+  commands: []
+issue_gates: []
