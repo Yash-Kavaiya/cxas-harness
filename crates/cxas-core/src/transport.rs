@@ -16,6 +16,7 @@ use crate::CoreError;
 use bytes::Bytes;
 use futures::Stream;
 use std::pin::Pin;
+use std::sync::Mutex;
 use std::task::{Context, Poll};
 
 pub struct ExportRequest {
@@ -48,7 +49,59 @@ impl Stream for ExportHandle {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ChannelSettings {
+    pub noise_cancellation: Option<bool>,
+    pub noise_suppression_level: Option<u32>,
+}
+
 #[async_trait::async_trait]
 pub trait CesTransport: Send + Sync {
     async fn export_app(&self, req: ExportRequest) -> Result<ExportHandle, CoreError>;
+
+    async fn update_channel_settings(
+        &self,
+        _name: &str,
+        _settings: ChannelSettings,
+    ) -> Result<ChannelSettings, CoreError> {
+        Err(CoreError::Transport(
+            "update_channel_settings not implemented".into(),
+        ))
+    }
+}
+
+pub struct NoopTransport;
+
+#[async_trait::async_trait]
+impl CesTransport for NoopTransport {
+    async fn export_app(&self, _req: ExportRequest) -> Result<ExportHandle, CoreError> {
+        Ok(ExportHandle::from_iter(std::iter::empty()))
+    }
+}
+
+#[derive(Default)]
+pub struct RecordingTransport {
+    last_channel_settings: Mutex<Option<ChannelSettings>>,
+}
+
+impl RecordingTransport {
+    pub fn last_channel_settings(&self) -> Option<ChannelSettings> {
+        *self.last_channel_settings.lock().expect("lock")
+    }
+}
+
+#[async_trait::async_trait]
+impl CesTransport for RecordingTransport {
+    async fn export_app(&self, _req: ExportRequest) -> Result<ExportHandle, CoreError> {
+        Ok(ExportHandle::from_iter(std::iter::empty()))
+    }
+
+    async fn update_channel_settings(
+        &self,
+        _name: &str,
+        settings: ChannelSettings,
+    ) -> Result<ChannelSettings, CoreError> {
+        *self.last_channel_settings.lock().expect("lock") = Some(settings);
+        Ok(settings)
+    }
 }
