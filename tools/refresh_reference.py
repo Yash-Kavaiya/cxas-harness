@@ -5,6 +5,7 @@ Run by hand or in CI. Nothing at build time touches the network.
 """
 import hashlib
 import json
+import re
 import sys
 import urllib.request
 from pathlib import Path
@@ -15,6 +16,9 @@ SOURCES = [
 ]
 
 REFERENCE_DIR = Path(__file__).resolve().parents[1] / "reference" / "ces"
+
+# Replicas disagree; fetch several times and keep the newest revision.
+ATTEMPTS = 5
 
 
 def canonicalize(obj):
@@ -44,20 +48,72 @@ def fetch(url):
         return json.loads(resp.read().decode("utf-8"))
 
 
+def newest(docs):
+    """Pick the document with the highest `revision`.
+
+    The discovery endpoint is served from replicas that can disagree: fetching
+    `?version=v1` repeatedly returns revision 20260730 and 20260806 in no stable
+    order. Comparing a single fetch byte-for-byte therefore flaps. Taking the
+    highest revision across several fetches converges deterministically on the
+    most current surface.
+    """
+    if not docs:
+        raise ValueError("no documents fetched")
+    return max(docs, key=lambda d: str(d.get("revision", "")))
+
+
+def fetch_best(url, attempts=ATTEMPTS):
+    """Fetch `attempts` times and keep the most current revision seen."""
+    docs = []
+    errors = []
+    for _ in range(attempts):
+        try:
+            docs.append(fetch(url))
+        except Exception as exc:  # network flake on one replica must not abort
+            errors.append(str(exc))
+    if not docs:
+        raise RuntimeError(f"all {attempts} fetches of {url} failed: {'; '.join(errors)}")
+    return newest(docs)
+
+
+def read_pinned_revisions(path):
+    """Parse `PINNED.toml` into {version: revision} without a TOML dependency."""
+    if not path.exists():
+        return {}
+    text = path.read_text(encoding="utf-8")
+    out = {}
+    for block in text.split("[[reference]]")[1:]:
+        version = re.search(r'version\s*=\s*"([^"]+)"', block)
+        revision = re.search(r'revision\s*=\s*"([^"]+)"', block)
+        if version and revision:
+            out[version.group(1)] = revision.group(1)
+    return out
+
+
 def main(argv):
     check_only = "--check" in argv
     REFERENCE_DIR.mkdir(parents=True, exist_ok=True)
     entries = []
     drifted = []
+    pinned_revisions = read_pinned_revisions(REFERENCE_DIR / "PINNED.toml")
     for version, url in SOURCES:
-        doc = fetch(url)
+        doc = fetch_best(url)
         text = canonicalize(doc)
         digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
         path = REFERENCE_DIR / f"{version}.discovery.json"
         if check_only:
-            existing = path.read_text(encoding="utf-8") if path.exists() else ""
-            if existing != text:
-                drifted.append(version)
+            pinned_rev = pinned_revisions.get(version, "")
+            fetched_rev = doc.get("revision", "")
+            if fetched_rev > pinned_rev:
+                # Upstream published something newer than what we vendored.
+                drifted.append(f"{version} ({pinned_rev} -> {fetched_rev})")
+            elif fetched_rev == pinned_rev:
+                # Same revision must mean same bytes; anything else is a
+                # silent content change worth reviewing.
+                existing = path.read_text(encoding="utf-8") if path.exists() else ""
+                if existing != text:
+                    drifted.append(f"{version} (content changed at {fetched_rev})")
+            # fetched_rev < pinned_rev is replica skew: we already hold newer.
         else:
             path.write_text(text, encoding="utf-8", newline="\n")
         entries.append({
