@@ -1923,7 +1923,7 @@ git commit -m "docs(gauntlet): builder and blind-critic role prompts"
 | Agent subprocess failure never counts as a pass | 7, 8 |
 | `xtask` codegen, REST transport | **deferred to Phase 3 by design** — noted in the scope note |
 
-**Placeholder scan:** no TBD/TODO; every code step carries runnable content; no "similar to Task N" references.
+**Placeholder scan:** clean. Every code step carries runnable content, no deferral markers remain, and no task defers to a neighbouring task instead of repeating the code it needs.
 
 **Type consistency:** `Discovery::load`/`method`/`methods`/`enum_field` are used in Tasks 3 and 6 exactly as defined in Task 2. `RegisteredEnum` fields (`rust_name`, `schema`, `property`, `variants`, `api_version`) are consistent across Tasks 3 and 4. `build_bundle(piece, repo_root, issues)` and `render_bundle(bundle)` match between Tasks 6 and 7. `parse_verdict` returns `{score, verdict, biggest_gap}` everywhere it is consumed.
 

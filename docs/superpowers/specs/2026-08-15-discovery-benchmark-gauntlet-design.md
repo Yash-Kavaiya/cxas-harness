@@ -70,7 +70,7 @@ xtask/                         new: codegen, discovery -> enums + REST client
 gauntlet/                      new: orchestrator, roles, evidence collector
 ```
 
-Data flow:
+## Data flow
 
 ```
 reference/ces/*.json
