@@ -1,4 +1,5 @@
 /target/
+.worktrees/
 **/*.rs.bk
 .superpowers/sdd/
 __pycache__/
