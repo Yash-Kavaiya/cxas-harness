@@ -13,7 +13,7 @@
 <article class="page" id="content">
   <p class="kicker">Project</p>
   <h1>This website</h1>
-  <p class="lead">The documentation site is a static HTML tree. There is no docs framework at runtime. GitHub Pages serves the files in <code>docs-site/</code> from the <code>master</code> branch via Actions.</p>
+  <p class="lead">The documentation site is a static HTML tree. There is no docs framework at runtime. Source lives in <code>docs-site/</code> on <code>master</code>. GitHub Pages publishes the <code>gh-pages</code> branch, which is that directory at the branch root.</p>
 
   <h2>Published URL</h2>
   <p><a href="https://yash-kavaiya.github.io/cxas-harness/">https://yash-kavaiya.github.io/cxas-harness/</a></p>
@@ -41,7 +41,7 @@
   </table>
 
   <h2>How a page is built</h2>
-  <p>Each HTML file has a <code>&lt;template id="page"&gt;</code> with the article body. <code>assets/site.js</code> injects the shared header, sidebar, search filter, and footer, then clones the template into <code>#content</code>. <code>body[data-page]</code> marks the active nav item.</p>
+  <p>Each HTML file has a visible <code>&lt;article id="content"&gt;</code> so the page is readable without JavaScript. <code>assets/site.js</code> adds the shared header, sidebar, search filter, and footer. <code>body[data-page]</code> marks the active nav item.</p>
   <p>Styles live in <code>assets/style.css</code>. The architecture page also loads Mermaid from a CDN to render the environment chart.</p>
   <p>Links between pages are relative (<code>cli.html</code>, not <code>/cli.html</code>) so the site works both at the GitHub Pages project root <code>/cxas-harness/</code> and when opened from a local folder.</p>
 

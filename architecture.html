@@ -82,8 +82,8 @@ flowchart TB
   <h2>Location newtype</h2>
   <p><code>cxas_core::Location</code> is a newtype around <code>String</code> with no <code>Default</code> impl.</p>
   <ul>
-    <li><code>Location::new("")</code> and whitespace-only â†’ <code>CoreError::LocationRequired</code></li>
-    <li><code>Location::new("__default_global__")</code> â†’ <code>CoreError::LocationHardcodedGlobalForbidden</code></li>
+    <li><code>Location::new("")</code> and whitespace-only -> <code>CoreError::LocationRequired</code></li>
+    <li><code>Location::new("__default_global__")</code> -> <code>CoreError::LocationHardcodedGlobalForbidden</code></li>
     <li><code>Location::new("global")</code> succeeds</li>
     <li><code>Location::new("us")</code>, <code>"europe-west1"</code>, and other regional IDs succeed</li>
   </ul>
@@ -110,7 +110,7 @@ flowchart TB
   </ul>
 
   <h2>Quality bar</h2>
-  <p>Acceptance is dual: (a) the Phase 0 parity manifestâ€™s types and CLI argv are owned by crates, and (b) every cataloged issue has a closing unit test named in the plan. See <a href="issues.html">Issue coverage</a>.</p>
+  <p>Acceptance is dual: (a) the Phase 0 parity manifest's types and CLI argv are owned by crates, and (b) every cataloged issue has a closing unit test named in the plan. See <a href="issues.html">Issue coverage</a>.</p>
 </article>
 <script src="assets/site.js"></script>
 </body>
