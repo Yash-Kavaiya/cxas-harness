@@ -12,5 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod enum_registry;
 mod evaluation_run_state;
 pub use evaluation_run_state::EvaluationRunState;

@@ -350,6 +350,8 @@ dependencies = [
 name = "cxas-parity"
 version = "0.1.0"
 dependencies = [
+ "cxas-discovery",
+ "cxas-proto",
  "serde",
  "serde_json",
  "serde_yaml",
