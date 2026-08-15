@@ -12,28 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod context;
-mod diagnostic;
-mod error;
-#[cfg(feature = "llm")]
-mod llm;
-mod registry;
-mod rules;
-pub mod schema_map;
+pub mod depver;
+pub mod root;
+pub mod schema;
+pub mod structural;
+pub mod welcome;
 
-pub use context::{discover, AgentDoc, DeploymentDoc, EvalDoc, LintContext, ToolDoc};
-pub use diagnostic::{Diagnostic, LintReport, Severity};
-pub use error::LintError;
-pub use registry::{LintRule, RuleRegistry, RuleScope};
+use crate::registry::LintRule;
 
-#[cfg(feature = "llm")]
-pub use llm::{InstructionFile, LlmLintClient};
-
-#[cfg(feature = "llm")]
-pub mod test_support {
-    pub use crate::llm::spawn_json_listener;
-}
-
-pub fn crate_name() -> &'static str {
-    "cxas-lint"
+pub fn builtin_rules() -> Vec<Box<dyn LintRule>> {
+    let mut rules: Vec<Box<dyn LintRule>> = vec![
+        Box::new(root::VRootRule),
+        Box::new(welcome::VWelcomeRule),
+        Box::new(depver::VDepverRule),
+    ];
+    rules.extend(schema::schema_rules());
+    rules.extend(structural::structural_rules());
+    rules
 }

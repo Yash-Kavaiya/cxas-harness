@@ -1,0 +1,1 @@
+Return only a JSON array of objects with keys severity, message, path.

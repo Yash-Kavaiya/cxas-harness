@@ -1,0 +1,7 @@
+{
+  "app": ["display_name", "root_agent"],
+  "agent": ["instruction"],
+  "tool": ["name", "schema"],
+  "deployment": ["channel_type"],
+  "evaluation": ["display_name"]
+}
