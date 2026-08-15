@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Examples · cxas-harness</title>
+  <meta name="description" content="Worked cxas command sequences: init, lint, catalog, state, pull, deploy, evals, and actions.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="examples.html">
+<template id="page">
+  <p class="kicker">Start</p>
+  <h1>Examples</h1>
+  <p class="lead">These sequences run against the local catalog and mocks. Prefix with <code>cargo run -p cxas-cli --</code> or put <code>target/debug</code> on <code>PATH</code>.</p>
+
+  <h2>1. Scaffold and lint</h2>
+  <pre><code>cxas init --app-dir ./pilot
+cxas lint --app-dir ./pilot
+cxas --format human lint --app-dir ./pilot</code></pre>
+  <p>Expected: exit 0, JSON <code>ok: true</code>, command <code>lint</code>.</p>
+
+  <h2>2. Create an app and list it later</h2>
+  <pre><code>cxas create --name demo --location us --project-id my-project
+cxas apps list --location us --project-id my-project
+cxas apps get --app demo --location us --project-id my-project</code></pre>
+  <p>The second process must see the app because it is stored in <code>.cxas/catalog.json</code>. To isolate a run:</p>
+  <pre><code># PowerShell
+$env:CXAS_CATALOG = "$PWD\tmp-catalog.json"
+# Unix
+export CXAS_CATALOG="$PWD/tmp-catalog.json"</code></pre>
+
+  <h2>3. State and diff</h2>
+  <pre><code>cxas state --app-dir ./pilot --location us --project-id my-project
+cxas diff --app-dir ./pilot --location us --app demo
+cxas diff --app-dir ./pilot --location us --app demo --allow-drift</code></pre>
+  <p>Without <code>--allow-drift</code>, a changed tree exits 1 with a drift error code.</p>
+
+  <h2>4. Pull a versioned export</h2>
+  <pre><code>cxas pull \
+  --app projects/p/locations/us/apps/a \
+  --location us \
+  --target-dir ./out \
+  --version-id v3</code></pre>
+  <p>Uses the mock transport. <code>--version-id</code> is recorded on the export request (#252). Large payloads stream through <code>ExportHandle</code> (#298).</p>
+
+  <h2>5. Deploy locally</h2>
+  <pre><code>cxas deploy --app-dir ./pilot --project-id my-project --location us \
+  --channel-type web --noise-cancellation
+cxas deployments list --location us --project-id my-project --app-name demo</code></pre>
+
+  <h2>6. Evals and traces</h2>
+  <pre><code>cxas run --app-dir ./pilot --location us --project-id my-project
+cxas evals report --output-dir ./report
+cxas trace --raw --app-name demo --location us</code></pre>
+
+  <h2>7. GitHub Actions from environment.json</h2>
+  <pre><code>cxas actions init --app-dir ./pilot \
+  --workload-identity-provider projects/123/locations/global/workloadIdentityPools/pool/providers/gh \
+  --service-account cxas-ci@my-project.iam.gserviceaccount.com</code></pre>
+
+  <h2>8. Migration</h2>
+  <pre><code>cxas migrate dfcx --source ./dfcx --zip ./agent.zip \
+  --project-id my-project --location us --target-name migrated --yes</code></pre>
+
+  <h2>9. Fail closed on location</h2>
+  <pre><code>cxas apps list --project-id my-project
+# exit 2, error.code = LOCATION_REQUIRED</code></pre>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>

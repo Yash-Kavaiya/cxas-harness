@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lint engine · cxas-harness</title>
+  <meta name="description" content="cxas lint rules: V-ROOT, welcome event, deployment version, schema, and structural checks.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="lint.html">
+<template id="page">
+  <p class="kicker">Engines</p>
+  <h1>Lint engine</h1>
+  <p class="lead"><code>cxas lint --app-dir &lt;path&gt;</code> loads the app tree, builds a <code>LintContext</code>, and runs every registered rule. Diagnostics are collected into a <code>LintReport</code> and printed as JSON (or human text).</p>
+
+  <h2>How to run</h2>
+  <pre><code>cargo run -p cxas-cli -- lint --app-dir ./my-app
+cargo run -p cxas-cli -- --format human lint --app-dir ./my-app</code></pre>
+  <p>Any error-severity diagnostic makes the process exit 1. Missing <code>app.yaml</code> / <code>app.json</code> fails <code>V001</code>.</p>
+
+  <h2>Named closers</h2>
+  <table>
+    <thead><tr><th>Id</th><th>Issue</th><th>Check</th></tr></thead>
+    <tbody>
+      <tr><td><code>V-ROOT</code></td><td>#86</td><td><code>app.yaml</code> names a <code>root_agent</code> or <code>start_agent</code> that exists under <code>agents/</code></td></tr>
+      <tr><td><code>V-WELCOME</code></td><td>#397</td><td>Web Widget deployments declare a <code>welcome_event</code></td></tr>
+      <tr><td><code>V-DEPVER</code></td><td>#397</td><td>Deployment <code>app_version</code> is non-empty</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Schema rules</h2>
+  <p>Driven by <code>schema/app.required.json</code>:</p>
+  <table>
+    <thead><tr><th>Id</th><th>Required field</th></tr></thead>
+    <tbody>
+      <tr><td><code>V-SCHEMA-APP-DISPLAY_NAME</code></td><td>app <code>display_name</code></td></tr>
+      <tr><td><code>V-SCHEMA-AGENT-INSTRUCTION</code></td><td>agent <code>instruction</code></td></tr>
+      <tr><td><code>V-SCHEMA-TOOL-NAME</code></td><td>tool <code>name</code></td></tr>
+      <tr><td><code>V-SCHEMA-TOOL-SCHEMA</code></td><td>tool <code>schema</code></td></tr>
+      <tr><td><code>V-SCHEMA-DEPLOYMENT-CHANNEL_TYPE</code></td><td>deployment <code>channel_type</code></td></tr>
+      <tr><td><code>V-SCHEMA-EVALUATION-DISPLAY_NAME</code></td><td>evaluation <code>display_name</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Structural rules</h2>
+  <table>
+    <thead><tr><th>Id</th><th>Check</th></tr></thead>
+    <tbody>
+      <tr><td><code>V001</code></td><td><code>app.yaml</code>, <code>app.yml</code>, or <code>app.json</code> exists at the app root</td></tr>
+      <tr><td><code>V002</code></td><td><code>display_name</code> is non-empty</td></tr>
+      <tr><td><code>V003</code></td><td>every <code>agents/&lt;name&gt;/</code> directory contains <code>instruction.txt</code> or <code>agent.yaml</code></td></tr>
+      <tr><td><code>V004</code></td><td>every tool referenced by an agent exists under <code>tools/</code></td></tr>
+      <tr><td><code>V005</code></td><td>tool schema JSON is a valid JSON Schema object (draft 2020-12 shape)</td></tr>
+      <tr><td><code>V006</code></td><td>evaluation files reference existing agents</td></tr>
+      <tr><td><code>V007</code></td><td><code>instruction.txt</code> must not be empty when present</td></tr>
+      <tr><td><code>V008</code></td><td>agent display names must be unique</td></tr>
+      <tr><td><code>V009</code></td><td><code>environment.json</code> boolean fields must be JSON booleans, not strings</td></tr>
+    </tbody>
+  </table>
+  <p>Additional generated structural/schema variants bring the registry past 60 rule ids (Phase 3 completeness vs schema). <code>RuleRegistry::ids()</code> is the live list.</p>
+
+  <h2>llm-lint</h2>
+  <p>Semantic review uses <code>crates/cxas-lint/prompts/semantic_review.txt</code> and a Gemini HTTP client. Build with <code>--features llm</code>. Without that feature the CLI exits 2 with a disabled-feature code.</p>
+
+  <h2>App skeleton <code>init</code> writes</h2>
+  <pre><code>my-app/
+  app.yaml
+  agents/
+    main/
+      instruction.txt</code></pre>
+  <p>That tree is enough for <code>V-ROOT</code> and <code>V001</code>–<code>V003</code> to pass if <code>app.yaml</code> points <code>root_agent</code> at <code>main</code>.</p>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>

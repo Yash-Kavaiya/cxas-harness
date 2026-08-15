@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Migration · cxas-harness</title>
+  <meta name="description" content="DFCX migration pipeline, SnapshotGuard RAII cleanup, and ToolSync.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="migration.html">
+<template id="page">
+  <p class="kicker">Engines</p>
+  <h1>Migration</h1>
+  <p class="lead"><code>cxas-migration</code> converts a Dialogflow CX agent into a CXAS app and keeps eval-run snapshots from leaking. The default path is non-interactive.</p>
+
+  <h2>CLI</h2>
+  <pre><code>cargo run -p cxas-cli -- migrate dfcx \
+  --source ./dfcx-export \
+  --zip ./agent.zip \
+  --project-id my-project \
+  --location us \
+  --target-name migrated \
+  --yes</code></pre>
+  <p><code>--yes</code> confirms the pipeline without a prompt (required under <code>--no-input</code>).</p>
+
+  <h2>Pipeline</h2>
+  <ol>
+    <li>Read a DFCX export directory or zip (<code>MigrationSource</code>)</li>
+    <li>Build an <code>IrBundle</code> (flows, playbooks, tools, traces)</li>
+    <li>Resolve flow dependencies</li>
+    <li>Write a <code>MigratedApp</code> for the <code>MigrationTarget</code></li>
+  </ol>
+  <p>Supporting types include <code>DFCXAgentExporter</code>, <code>FlowDependencyResolver</code>, <code>ConversationTrace</code>, and graph visualizers. They run in-process against fixtures in this checkout.</p>
+
+  <h2>SnapshotGuard (#168)</h2>
+  <p>Hillclimb used to leave agent snapshots behind on panic or cancel. <code>SnapshotGuard</code> implements RAII:</p>
+  <ul>
+    <li>On drop it deletes every snapshot it created</li>
+    <li>Panic and cancel take the same path</li>
+    <li><code>take_failed_deletes</code> reports snapshots the API failed to delete so callers can retry</li>
+  </ul>
+  <p>The guard talks to a <code>SnapshotApi</code> trait. Tests inject a fake API; there is no Cloud call here.</p>
+
+  <h2>ToolSync (#394)</h2>
+  <p>When a tool disappears on the remote tree, local <code>tools/</code> must drop it too. <code>ToolSync</code> diffs content hashes from <code>cxas-state</code> and returns a <code>SyncReport</code>.</p>
+
+  <h2>TUI</h2>
+  <p>An interactive migrator exists behind the <code>tui</code> feature. Default builds stay non-interactive so CI and coding agents never block on a terminal UI.</p>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>

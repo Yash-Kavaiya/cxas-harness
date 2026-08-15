@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Design specs · cxas-harness</title>
+  <meta name="description" content="Superpowers design specs and implementation plans for cxas-harness phases 0 through 5.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="design.html">
+<template id="page">
+  <p class="kicker">Project</p>
+  <h1>Design specs</h1>
+  <p class="lead">The implementation followed Superpowers SDD: one design spec and one implementation plan per phase, plus a coverage map. Product input was already-approved <code>PRD.md.txt</code> and <code>dev.md.txt</code>.</p>
+
+  <h2>Where the files live</h2>
+  <table>
+    <thead><tr><th>Kind</th><th>Path</th></tr></thead>
+    <tbody>
+      <tr><td>Specs</td><td><a href="https://github.com/Yash-Kavaiya/cxas-harness/tree/master/docs/superpowers/specs">docs/superpowers/specs/</a></td></tr>
+      <tr><td>Plans</td><td><a href="https://github.com/Yash-Kavaiya/cxas-harness/tree/master/docs/superpowers/plans">docs/superpowers/plans/</a></td></tr>
+      <tr><td>Coverage map</td><td><a href="https://github.com/Yash-Kavaiya/cxas-harness/blob/master/docs/superpowers/coverage-map.md">docs/superpowers/coverage-map.md</a></td></tr>
+      <tr><td>Validator</td><td><code>tools/superpowers_validate.py</code></td></tr>
+      <tr><td>Product input</td><td><code>PRD.md.txt</code>, <code>dev.md.txt</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Spec / plan pairs</h2>
+  <table>
+    <thead><tr><th>Date prefix</th><th>Name</th></tr></thead>
+    <tbody>
+      <tr><td>2026-08-15</td><td>parity-contract</td></tr>
+      <tr><td>2026-08-15</td><td>workspace-architecture</td></tr>
+      <tr><td>2026-08-15</td><td>bidi-eval-correctness</td></tr>
+      <tr><td>2026-08-15</td><td>lint-validation</td></tr>
+      <tr><td>2026-08-15</td><td>migration-lifecycle</td></tr>
+      <tr><td>2026-08-15</td><td>packaging-cli-ci</td></tr>
+    </tbody>
+  </table>
+  <p>Each spec is <code>*-design.md</code>. Each plan is the same stem without <code>-design</code>. Plans are written for a single implementer, TDD against mocks, and worktree isolation.</p>
+
+  <h2>Constraints the specs freeze</h2>
+  <ul>
+    <li>No live CES or Gauntlet in the first implementation</li>
+    <li>Location mandatory; never silent <code>"global"</code></li>
+    <li>Machine-first JSON CLI</li>
+    <li>Unknown proto enums must not panic</li>
+    <li>mdBook sidebar: Docs / Examples / Agent Skills / Core SDK (see <code>book/</code>)</li>
+    <li>This website is the published human docs surface</li>
+  </ul>
+
+  <h2>Validate the spec set</h2>
+  <pre><code>python tests/test_superpowers_validate.py
+python tools/superpowers_validate.py</code></pre>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>

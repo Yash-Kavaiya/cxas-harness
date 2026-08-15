@@ -1,5 +1,10 @@
 # cxas-harness
 
+[![Documentation](https://img.shields.io/badge/docs-yash--kavaiya.github.io-d28a4c?style=flat-square)](https://yash-kavaiya.github.io/cxas-harness/)
+[![GitHub](https://img.shields.io/badge/github-Yash--Kavaiya%2Fcxas--harness-171c24?style=flat-square)](https://github.com/Yash-Kavaiya/cxas-harness)
+
+**Documentation website:** <https://yash-kavaiya.github.io/cxas-harness/>
+
 Rust rewrite of Google Cloud’s [`cxas-scrapi`](https://github.com/GoogleCloudPlatform/cxas-scrapi) — a CLI and library harness for CX Agent Studio (CES).
 
 `cxas-harness` is built for **compile-time correctness**, **mandatory regional location**, **machine-first JSON CLI**, and a **modular crate workspace**. It implements the Superpowers Phase 0–5 plan set under `docs/superpowers/`.
@@ -93,7 +98,16 @@ cxas-harness/
   parity/            Checked-in parity contract
   schema/            Lint required-field schema
   book/              mdBook sidebar: Docs / Examples / Agent Skills / Core SDK
+  docs-site/         Published documentation website (GitHub Pages)
 ```
+
+## Documentation website
+
+Full multi-page docs (getting started, architecture, every CLI command, crate SDK, lint/evals/migration, all 25 issue closers, and how the site is deployed):
+
+**https://yash-kavaiya.github.io/cxas-harness/**
+
+Source: [`docs-site/`](docs-site/). Preview locally with `python -m http.server` from that directory. The GitHub repository homepage field points at the same URL.
 
 ## Requirements
 

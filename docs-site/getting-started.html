@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Getting started · cxas-harness</title>
+  <meta name="description" content="Install Rust, build cxas-harness, and run the first cxas commands against the local catalog.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="getting-started.html">
+<template id="page">
+  <p class="kicker">Start</p>
+  <h1>Getting started</h1>
+  <p class="lead">Build the workspace, run the test suite, and exercise the CLI against the local catalog. You do not need a GCP project for anything on this page.</p>
+
+  <nav class="toc">
+    <h2>On this page</h2>
+    <ol>
+      <li><a href="#requirements">Requirements</a></li>
+      <li><a href="#clone">Clone and path</a></li>
+      <li><a href="#test">Build and test</a></li>
+      <li><a href="#first">First commands</a></li>
+      <li><a href="#location">Location rule</a></li>
+      <li><a href="#catalog">Where state lives</a></li>
+      <li><a href="#features">Optional features</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="requirements">Requirements</h2>
+  <ul>
+    <li>Rust 1.80+ (<code>rustc</code> / <code>cargo</code>)</li>
+    <li>Git</li>
+    <li>Optional: <code>protoc</code>. Without it, <code>cxas-proto</code> uses the hand-written <code>EvaluationRunState</code> wrapper and skips codegen.</li>
+  </ul>
+
+  <h2 id="clone">Clone and path</h2>
+  <pre><code>git clone https://github.com/Yash-Kavaiya/cxas-harness.git
+cd cxas-harness</code></pre>
+  <p>On Windows PowerShell, cargo is often installed but not on <code>PATH</code> in the current session:</p>
+  <pre><code>$env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"</code></pre>
+
+  <h2 id="test">Build and test</h2>
+  <pre><code>cargo test --workspace
+cargo build -p cxas-cli</code></pre>
+  <p>The binary is named <code>cxas</code>. After a debug build it sits at <code>target/debug/cxas</code> (or <code>cxas.exe</code> on Windows). You can also run through cargo:</p>
+  <pre><code>cargo run -p cxas-cli -- --help</code></pre>
+
+  <h2 id="first">First commands</h2>
+  <pre><code>cargo run -p cxas-cli -- init --app-dir ./my-app
+cargo run -p cxas-cli -- lint --app-dir ./my-app
+cargo run -p cxas-cli -- create --name demo --location us --project-id my-project
+cargo run -p cxas-cli -- apps list --location us --project-id my-project
+cargo run -p cxas-cli -- state --app-dir ./my-app --location us --project-id my-project</code></pre>
+  <p>JSON is the default. For a human-readable lint summary:</p>
+  <pre><code>cargo run -p cxas-cli -- --format human lint --app-dir ./my-app</code></pre>
+  <p>A successful JSON envelope looks like:</p>
+  <pre><code>{ "ok": true, "command": "lint", "data": { } }</code></pre>
+  <p>A usage failure (missing location, TTY required, disabled feature) uses exit code <code>2</code>:</p>
+  <pre><code>{ "ok": false, "command": "pull", "error": { "code": "LOCATION_REQUIRED", "message": "..." } }</code></pre>
+
+  <h2 id="location">Location rule</h2>
+  <div class="callout warn">
+    <strong>No silent global</strong>
+    Every CES-shaped constructor takes a <code>Location</code>. Empty location is <code>LocationRequired</code>. The sentinel <code>__default_global__</code> is <code>LocationHardcodedGlobalForbidden</code>. Passing the literal string <code>global</code> is allowed because that is an explicit caller choice (issue #401).
+  </div>
+  <p>CLI commands that talk to CES-shaped resources require <code>--location</code> and usually <code>--project-id</code>. <code>lint</code> is local and only needs <code>--app-dir</code>.</p>
+
+  <h2 id="catalog">Where state lives</h2>
+  <p>Apps, deployments, and related records persist in <code>.cxas/catalog.json</code> at the process working directory. Override the path with <code>CXAS_CATALOG</code>. The directory is gitignored. Details: <a href="catalog.html">Local catalog</a>.</p>
+
+  <h2 id="features">Optional features</h2>
+  <table>
+    <thead><tr><th>Feature</th><th>How</th><th>What it unlocks</th></tr></thead>
+    <tbody>
+      <tr><td><code>llm</code></td><td><code>cargo run -p cxas-cli --features llm -- llm-lint --app-dir ./my-app</code></td><td>Gemini HTTP semantic lint. Without the feature the command exits 2.</td></tr>
+      <tr><td><code>tui</code></td><td>migration crate feature</td><td>Interactive DFCX TUI. Default <code>migrate dfcx</code> is non-interactive.</td></tr>
+      <tr><td><code>run-session</code></td><td>needs a TTY</td><td>Interactive session. Non-TTY exits 2.</td></tr>
+    </tbody>
+  </table>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>

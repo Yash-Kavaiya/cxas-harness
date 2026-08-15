@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>cxas-harness documentation</title>
+  <meta name="description" content="Documentation for cxas-harness, a Rust rewrite of Google Cloud cxas-scrapi: CLI, crates, lint, evals, and local catalog.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="index.html">
+<template id="page">
+  <section class="hero">
+    <p class="kicker">Documentation website</p>
+    <h1>cxas-harness</h1>
+    <p class="lead">A Rust workspace and machine-first CLI for CX Agent Studio. This site documents the entire project: install, architecture, every command, every crate, the local catalog, lint and eval engines, Superpowers design specs, and what is still mock-only.</p>
+    <div class="actions">
+      <a class="btn primary" href="getting-started.html">Get started</a>
+      <a class="btn" href="cli.html">CLI reference</a>
+      <a class="btn" href="https://github.com/Yash-Kavaiya/cxas-harness">Source on GitHub</a>
+    </div>
+  </section>
+
+  <div class="callout note">
+    <strong>Live docs URL</strong>
+    The published site is <a href="https://yash-kavaiya.github.io/cxas-harness/">https://yash-kavaiya.github.io/cxas-harness/</a>. The same URL is set as the GitHub repository homepage.
+  </div>
+
+  <h2>What this project is</h2>
+  <p><code>cxas-harness</code> is an independent Rust rewrite of Google Cloud’s <a href="https://github.com/GoogleCloudPlatform/cxas-scrapi">cxas-scrapi</a>. It is a CLI (<code>cxas</code>) plus nine workspace crates. Design work followed Superpowers specs and plans dated 2026-08-15 under <code>docs/superpowers/</code>.</p>
+  <p>This checkout talks to a <strong>local catalog and in-process mocks</strong>, not live CES or GCP. That is intentional: tests never require a cloud project. Location is never silently defaulted to <code>"global"</code>.</p>
+
+  <div class="cards">
+    <article class="card">
+      <h3>Machine-first CLI</h3>
+      <p>JSON envelope on stdout, <code>--no-input</code> on by default, exit codes 0 / 1 / 2. Built for coding agents and CI.</p>
+    </article>
+    <article class="card">
+      <h3>Mandatory Location</h3>
+      <p><code>Location</code> has no <code>Default</code>. Empty is an error. <code>__default_global__</code> is rejected. The literal <code>"global"</code> is allowed only when the caller passes it.</p>
+    </article>
+    <article class="card">
+      <h3>Issue-driven tests</h3>
+      <p>The 25 cataloged <code>cxas-scrapi</code> issues each have a closer in the coverage map and an in-process unit test.</p>
+    </article>
+    <article class="card">
+      <h3>Nine crates</h3>
+      <p>Parity, proto, core, utils, state, evals, lint, migration, and the <code>cxas</code> binary.</p>
+    </article>
+  </div>
+
+  <h2>Start here</h2>
+  <ol>
+    <li><a href="getting-started.html">Install Rust and run the first commands</a></li>
+    <li><a href="examples.html">Walk a local app from init through lint, create, state, and deploy</a></li>
+    <li><a href="cli.html">Look up every subcommand and flag</a></li>
+    <li><a href="architecture.html">See how crates and the catalog connect</a></li>
+    <li><a href="limits.html">Read what is mock-only before assuming cloud RPCs exist</a></li>
+  </ol>
+
+  <h2>Crate map</h2>
+  <table>
+    <thead><tr><th>Crate</th><th>Phase</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>cxas-parity</code></td><td>0</td><td>Frozen Python public surface (YAML)</td></tr>
+      <tr><td><code>cxas-proto</code></td><td>0</td><td><code>EvaluationRunState::Unknown(i32)</code> (#284)</td></tr>
+      <tr><td><code>cxas-core</code></td><td>1</td><td>Location, Apps export stream, QuotaKind, channels</td></tr>
+      <tr><td><code>cxas-utils</code></td><td>1</td><td>Pagination + boolean env templates (#256)</td></tr>
+      <tr><td><code>cxas-state</code></td><td>1</td><td>Content-addressed hash / diff / profiles (#131, #270)</td></tr>
+      <tr><td><code>cxas-evals</code></td><td>2</td><td>TurnCursor, BidiSession, AudioScorer (#355, #345, #136)</td></tr>
+      <tr><td><code>cxas-lint</code></td><td>3</td><td>Rule registry, V-ROOT, welcome / depver (#86, #397)</td></tr>
+      <tr><td><code>cxas-migration</code></td><td>4</td><td>Snapshot RAII, tool sync, DFCX pipeline (#168, #394)</td></tr>
+      <tr><td><code>cxas-cli</code></td><td>5</td><td><code>cxas</code> binary, actions, deny.toml (#55, #46, #54)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Honest status</h2>
+  <p>Workspace tests pass against mocks. Commands that look like cloud operations record or read <code>.cxas/catalog.json</code> (or return mock fixtures). There is no live CES transport, no Vertex STT, and no Cloud RPC in this checkout. See <a href="limits.html">Limits and honesty</a>.</p>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>

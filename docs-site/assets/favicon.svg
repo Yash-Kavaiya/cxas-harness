@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="cxas-harness">
+  <rect width="64" height="64" rx="12" fill="#14181f"/>
+  <rect x="2" y="2" width="60" height="60" rx="10" fill="none" stroke="#c9844a" stroke-width="2"/>
+  <text x="32" y="42" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="22" font-weight="700" fill="#e8d5b5">cx</text>
+</svg>

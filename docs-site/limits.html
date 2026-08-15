@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Limits and honesty · cxas-harness</title>
+  <meta name="description" content="What cxas-harness does and does not do in this checkout: mocks, no live CES, remaining work.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="limits.html">
+<template id="page">
+  <p class="kicker">Project</p>
+  <h1>Limits and honesty</h1>
+  <p class="lead">This page exists so nobody mistakes a passing workspace test suite for a production CES client.</p>
+
+  <h2>What works now</h2>
+  <ul>
+    <li>Full Cargo workspace builds and unit/integration tests against mocks</li>
+    <li>Every CLI verb in the parser dispatches and returns a JSON envelope</li>
+    <li>Local catalog persistence across processes</li>
+    <li>Location newtype and CLI usage errors</li>
+    <li>Lint registry, eval cursor/DTMF/audio scorers, snapshot RAII, tool sync — in-process</li>
+    <li><code>actions init</code> writes workflow files from templates</li>
+  </ul>
+
+  <h2>What this checkout does not do</h2>
+  <table>
+    <thead><tr><th>Surface</th><th>Reality</th></tr></thead>
+    <tbody>
+      <tr><td>CES / Dialogflow CX RPCs</td><td>No live transport. <code>NoopTransport</code> / <code>RecordingTransport</code> only.</td></tr>
+      <tr><td>GCP auth</td><td><code>--oauth-token</code> is accepted and unused by a live client.</td></tr>
+      <tr><td><code>deploy</code> / <code>migrate</code></td><td>Local catalog + pipeline fixtures. No Cloud deploy job.</td></tr>
+      <tr><td>Vertex STT / Gemini llm-lint</td><td>STT is a trait. <code>llm-lint</code> needs <code>--features llm</code> and a real key you supply later.</td></tr>
+      <tr><td><code>run-session</code></td><td>Requires a TTY. Not for CI.</td></tr>
+      <tr><td>Gauntlet</td><td>Out of band. Not a crate.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Rough remaining effort</h2>
+  <p>If you already use this tree as a mock harness: <strong>zero extra time</strong>. Approximate follow-on if you want live CES:</p>
+  <ul>
+    <li>3–6 weeks for an MVP live transport (auth, one region, apps list/get/export)</li>
+    <li>3–5 months for Python CLI/library parity on real RPCs</li>
+    <li>5–8 months for release-quality packaging, multi-region, and eval-on-Vertex</li>
+  </ul>
+
+  <h2>License</h2>
+  <p>Apache-2.0. Independent rewrite. Not an official Google product.</p>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>
