@@ -39,14 +39,12 @@ pub const REGISTERED_ENUMS: &[RegisteredEnum] = &[RegisteredEnum {
     schema: "EvaluationRun",
     property: "state",
     api_version: "v1beta",
-    // Deliberately the current (wrong) variant list, so the parity test fails
-    // on the real defect before it is corrected.
     variants: &[
         "EVALUATION_RUN_STATE_UNSPECIFIED",
-        "PENDING",
+        "QUEUED",
         "RUNNING",
-        "SUCCEEDED",
-        "FAILED",
+        "COMPLETED",
+        "ERROR",
         "CANCELLED",
     ],
 }];

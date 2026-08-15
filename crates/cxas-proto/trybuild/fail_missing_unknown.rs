@@ -15,14 +15,14 @@
 fn label(s: cxas_proto::EvaluationRunState) -> &'static str {
     match s {
         cxas_proto::EvaluationRunState::Unspecified => "u",
-        cxas_proto::EvaluationRunState::Pending => "p",
+        cxas_proto::EvaluationRunState::Queued => "q",
         cxas_proto::EvaluationRunState::Running => "r",
-        cxas_proto::EvaluationRunState::Succeeded => "s",
-        cxas_proto::EvaluationRunState::Failed => "f",
+        cxas_proto::EvaluationRunState::Completed => "d",
+        cxas_proto::EvaluationRunState::Error => "e",
         cxas_proto::EvaluationRunState::Cancelled => "c",
     }
 }
 
 fn main() {
-    let _ = label(cxas_proto::EvaluationRunState::Pending);
+    let _ = label(cxas_proto::EvaluationRunState::Queued);
 }
