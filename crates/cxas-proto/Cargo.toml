@@ -11,3 +11,6 @@ tonic = { version = "0.12", default-features = false, features = ["codegen", "pr
 
 [build-dependencies]
 tonic-build = "0.12"
+
+[dev-dependencies]
+trybuild = "1"
