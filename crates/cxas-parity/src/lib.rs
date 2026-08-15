@@ -16,7 +16,8 @@ mod error;
 mod manifest;
 
 pub use error::ParityError;
+pub use manifest::parse_yaml as parse_yaml_for_test;
 pub use manifest::{
-    load_bundled, load_manifest, Cli, IssueGate, ParityCommand, ParityEnum, ParityManifest,
-    ParityMethod, ParityModule, ParityType, Source,
+    load_bundled, load_manifest, parse_yaml, Cli, IssueGate, ParityCommand, ParityEnum,
+    ParityManifest, ParityMethod, ParityModule, ParityType, Source,
 };

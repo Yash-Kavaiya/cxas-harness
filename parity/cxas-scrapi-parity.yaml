@@ -2,10 +2,325 @@ version: 1
 source:
   repository: GoogleCloudPlatform/cxas-scrapi
   commit: 4f7b43ca6adda0acad95a7e3654eee4e2ed1438c
-modules: []
-enums: []
+modules:
+  - name: cxas_scrapi.core
+    rust_owner: cxas-core
+    types:
+      - python_class: Agents
+        python_module: cxas_scrapi.core.agents
+        rust_type: Agents
+        methods:
+          - { name: get_agents_map }
+          - { name: list_agents }
+          - { name: get_agent }
+          - { name: create_agent }
+          - { name: update_agent }
+          - { name: delete_agent }
+      - python_class: Apps
+        python_module: cxas_scrapi.core.apps
+        rust_type: Apps
+        methods:
+          - { name: list_apps }
+          - { name: get_app }
+          - { name: get_app_by_display_name }
+          - { name: create_app }
+          - { name: delete_app }
+          - { name: export_app }
+          - { name: import_app }
+          - { name: import_as_new_app }
+          - { name: get_apps_map }
+      - python_class: Callbacks
+        python_module: cxas_scrapi.core.callbacks
+        rust_type: Callbacks
+        methods: []
+      - python_class: Changelogs
+        python_module: cxas_scrapi.core.changelogs
+        rust_type: Changelogs
+        methods: []
+      - python_class: Common
+        python_module: cxas_scrapi.core.common
+        rust_type: Common
+        methods: []
+      - python_class: ConversationHistory
+        python_module: cxas_scrapi.core.conversation_history
+        rust_type: ConversationHistory
+        methods: []
+      - python_class: Deployments
+        python_module: cxas_scrapi.core.deployments
+        rust_type: Deployments
+        methods:
+          - { name: list_deployments }
+          - { name: get_deployment }
+          - { name: create_deployment }
+          - { name: update_deployment }
+          - { name: delete_deployment }
+      - python_class: Evaluations
+        python_module: cxas_scrapi.core.evaluations
+        rust_type: Evaluations
+        methods:
+          - { name: list_evaluations }
+          - { name: get_evaluation }
+          - { name: update_evaluation }
+          - { name: run_evaluation }
+          - { name: export_evaluation }
+          - { name: get_evaluation_result }
+          - { name: wait_for_run_and_get_results }
+          - { name: get_evaluations_map }
+      - python_class: Guardrails
+        python_module: cxas_scrapi.core.guardrails
+        rust_type: Guardrails
+        methods:
+          - { name: list_guardrails }
+          - { name: get_guardrail }
+          - { name: create_guardrail }
+          - { name: update_guardrail }
+          - { name: delete_guardrail }
+      - python_class: Sessions
+        python_module: cxas_scrapi.core.sessions
+        rust_type: Sessions
+        methods:
+          - { name: create_session_id }
+          - { name: run }
+          - { name: parse_result }
+          - { name: bidi_run }
+      - python_class: Tools
+        python_module: cxas_scrapi.core.tools
+        rust_type: Tools
+        methods:
+          - { name: get_tools_map }
+          - { name: list_tools }
+          - { name: get_tool }
+          - { name: create_tool }
+          - { name: update_tool }
+          - { name: delete_tool }
+      - python_class: Variables
+        python_module: cxas_scrapi.core.variables
+        rust_type: Variables
+        methods: []
+      - python_class: Versions
+        python_module: cxas_scrapi.core.versions
+        rust_type: Versions
+        methods:
+          - { name: list_versions }
+          - { name: create_version }
+          - { name: compare_versions }
+          - { name: get_version }
+  - name: cxas_scrapi.evals
+    rust_owner: cxas-evals
+    types:
+      - python_class: CallbackEvals
+        python_module: cxas_scrapi.evals.callback_evals
+        rust_type: CallbackEvals
+        methods: []
+      - python_class: GuardrailEvals
+        python_module: cxas_scrapi.evals.guardrail_evals
+        rust_type: GuardrailEvals
+        methods: []
+      - python_class: SimulationEvals
+        python_module: cxas_scrapi.evals.simulation_evals
+        rust_type: SimulationEvals
+        methods:
+          - { name: run_simulations }
+      - python_class: ToolEvals
+        python_module: cxas_scrapi.evals.tool_evals
+        rust_type: ToolEvals
+        methods: []
+      - python_class: TurnEvals
+        python_module: cxas_scrapi.evals.turn_evals
+        rust_type: TurnEvals
+        methods: []
+  - name: cxas_scrapi.cli
+    rust_owner: cxas-cli
+    types: []
+  - name: cxas_scrapi.migration
+    rust_owner: cxas-migration
+    types:
+      - python_class: BaseDFCXClient
+        python_module: cxas_scrapi.migration.dfcx_exporter
+        rust_type: BaseDFCXClient
+        methods: []
+      - python_class: ConversationalAgentsAPI
+        python_module: cxas_scrapi.migration.dfcx_exporter
+        rust_type: ConversationalAgentsAPI
+        methods: []
+      - python_class: DFCXAgentExporter
+        python_module: cxas_scrapi.migration.dfcx_exporter
+        rust_type: DFCXAgentExporter
+        methods: []
+      - python_class: DFCXAgents
+        python_module: cxas_scrapi.migration.dfcx_exporter
+        rust_type: DFCXAgents
+        methods: []
+      - python_class: DFCXGenerativeSettings
+        python_module: cxas_scrapi.migration.dfcx_exporter
+        rust_type: DFCXGenerativeSettings
+        methods: []
+      - python_class: DFCXPlaybooks
+        python_module: cxas_scrapi.migration.dfcx_exporter
+        rust_type: DFCXPlaybooks
+        methods: []
+      - python_class: DFCXTools
+        python_module: cxas_scrapi.migration.dfcx_exporter
+        rust_type: DFCXTools
+        methods: []
+      - python_class: FlowDependencyResolver
+        python_module: cxas_scrapi.migration.flow_visualizer
+        rust_type: FlowDependencyResolver
+        methods: []
+      - python_class: FlowTreeVisualizer
+        python_module: cxas_scrapi.migration.flow_visualizer
+        rust_type: FlowTreeVisualizer
+        methods: []
+      - python_class: HighLevelGraphVisualizer
+        python_module: cxas_scrapi.migration.graph_visualizer
+        rust_type: HighLevelGraphVisualizer
+        methods: []
+      - python_class: MainVisualizer
+        python_module: cxas_scrapi.migration.main_visualizer
+        rust_type: MainVisualizer
+        methods: []
+      - python_class: PlaybookTreeVisualizer
+        python_module: cxas_scrapi.migration.playbook_visualizer
+        rust_type: PlaybookTreeVisualizer
+        methods: []
+  - name: cxas_scrapi.utils
+    rust_owner: cxas-utils
+    types:
+      - python_class: EvalUtils
+        python_module: cxas_scrapi.utils.eval_utils
+        rust_type: EvalUtils
+        methods: []
+      - python_class: GoogleSheetsUtils
+        python_module: cxas_scrapi.utils.google_sheets_utils
+        rust_type: GoogleSheetsUtils
+        methods: []
+      - python_class: SecretManagerUtils
+        python_module: cxas_scrapi.utils.secret_manager_utils
+        rust_type: SecretManagerUtils
+        methods: []
+      - python_class: ChangelogUtils
+        python_module: cxas_scrapi.utils.changelog_utils
+        rust_type: ChangelogUtils
+        methods: []
+enums:
+  - python_name: EvaluationRunState
+    proto_type: google.cloud.ces.v1.EvaluationRunState
+    rust_type: cxas_proto::EvaluationRunState
+    rust_owner: cxas-proto
+    unknown_policy: retain_wire_value
 cli:
   binary: cxas
   global_flags: [oauth-token, no-input]
-  commands: []
-issue_gates: []
+  commands:
+    - argv: [migrate, dfcx]
+      python_handler: cli.main.run_migration_dashboard
+      rust_owner: cxas-cli
+    - argv: [init-github-action]
+      python_handler: core.github.init_github_action
+      rust_owner: cxas-cli
+    - argv: [evals, report]
+      python_handler: cli.main.combined_evals_report_cmd
+      rust_owner: cxas-cli
+    - argv: [test-tools]
+      python_handler: cli.main.test_tools
+      rust_owner: cxas-cli
+    - argv: [test-callbacks]
+      python_handler: cli.main.test_callbacks
+      rust_owner: cxas-cli
+    - argv: [test-single-callback]
+      python_handler: cli.main.test_single_callback
+      rust_owner: cxas-cli
+    - argv: [export]
+      python_handler: cli.main.export_eval
+      rust_owner: cxas-cli
+    - argv: [push-eval]
+      python_handler: cli.main.push_eval
+      rust_owner: cxas-cli
+    - argv: [run]
+      python_handler: cli.main.run_eval
+      rust_owner: cxas-cli
+    - argv: [run-session]
+      python_handler: cli.main.run_session
+      rust_owner: cxas-cli
+    - argv: [ci-test]
+      python_handler: cli.main.ci_test
+      rust_owner: cxas-cli
+    - argv: [local-test]
+      python_handler: cli.main.local_test
+      rust_owner: cxas-cli
+    - argv: [delete]
+      python_handler: cli.app.app_delete
+      rust_owner: cxas-cli
+    - argv: [pull]
+      python_handler: cli.app.app_pull
+      rust_owner: cxas-cli
+    - argv: [push]
+      python_handler: cli.app.app_push
+      rust_owner: cxas-cli
+    - argv: [lint]
+      python_handler: cli.app.app_lint
+      rust_owner: cxas-cli
+    - argv: [llm-lint]
+      python_handler: cli.llm_lint.llm_lint
+      rust_owner: cxas-cli
+    - argv: [help]
+      python_handler: cli.main.cmd_help
+      rust_owner: cxas-cli
+    - argv: [init]
+      python_handler: cli.app.app_init
+      rust_owner: cxas-cli
+    - argv: [create]
+      python_handler: cli.app.app_create
+      rust_owner: cxas-cli
+    - argv: [branch]
+      python_handler: cli.app.app_branch
+      rust_owner: cxas-cli
+    - argv: [apps, list]
+      python_handler: cli.app.apps_list
+      rust_owner: cxas-cli
+    - argv: [apps, get]
+      python_handler: cli.app.apps_get
+      rust_owner: cxas-cli
+    - argv: [conversations, list]
+      python_handler: cli.main.conversations_list
+      rust_owner: cxas-cli
+    - argv: [conversations, get]
+      python_handler: cli.main.conversations_get
+      rust_owner: cxas-cli
+    - argv: [deployments, list]
+      python_handler: cli.main.deployments_list
+      rust_owner: cxas-cli
+    - argv: [deployments, create]
+      python_handler: cli.main.deployments_create
+      rust_owner: cxas-cli
+    - argv: [deployments, promote]
+      python_handler: cli.main.deployments_promote
+      rust_owner: cxas-cli
+    - argv: [local, create]
+      python_handler: cli.create_local.handle_local_create
+      rust_owner: cxas-cli
+    - argv: [versions, list]
+      python_handler: cli.versions_cli.app_versions_list
+      rust_owner: cxas-cli
+    - argv: [versions, compare]
+      python_handler: cli.versions_cli.app_versions_compare
+      rust_owner: cxas-cli
+    - argv: [insights]
+      python_handler: cli.insights_cli
+      rust_owner: cxas-cli
+    - argv: [trace]
+      python_handler: cli.trace_cli
+      rust_owner: cxas-cli
+    - argv: [agent]
+      python_handler: cli.resources_cli
+      rust_owner: cxas-cli
+    - argv: [tool]
+      python_handler: cli.resources_cli
+      rust_owner: cxas-cli
+    - argv: [guardrail]
+      python_handler: cli.resources_cli
+      rust_owner: cxas-cli
+issue_gates:
+  - id: 284
+    crate_name: cxas-proto
+    test: evaluation_run_state_unknown_variant_is_typed

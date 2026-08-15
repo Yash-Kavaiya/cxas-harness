@@ -141,10 +141,24 @@ pub fn load_bundled() -> Result<ParityManifest, ParityError> {
     parse_yaml(BUNDLED)
 }
 
-fn parse_yaml(text: &str) -> Result<ParityManifest, ParityError> {
+pub fn parse_yaml(text: &str) -> Result<ParityManifest, ParityError> {
     let m: ParityManifest = serde_yaml::from_str(text)?;
     if m.version != 1 {
         return Err(ParityError::Schema(format!("version {} != 1", m.version)));
+    }
+    let mut seen_types = std::collections::BTreeSet::new();
+    for module in &m.modules {
+        for t in &module.types {
+            if !seen_types.insert(t.python_class.clone()) {
+                return Err(ParityError::Duplicate(t.python_class.clone()));
+            }
+        }
+    }
+    let mut seen_cmd = std::collections::BTreeSet::new();
+    for c in &m.cli.commands {
+        if !seen_cmd.insert(c.argv.clone()) {
+            return Err(ParityError::Duplicate(c.argv.join(" ")));
+        }
     }
     Ok(m)
 }
