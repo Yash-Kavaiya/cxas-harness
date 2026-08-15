@@ -28,18 +28,20 @@ async fn deletes_local_tool_missing_from_remote() {
 
     let remote_dir = tempfile::tempdir().unwrap();
     fs::create_dir_all(remote_dir.path().join("tools/alpha")).unwrap();
-    fs::write(remote_dir.path().join("tools/alpha/tool.yaml"), "name: alpha\n").unwrap();
+    fs::write(
+        remote_dir.path().join("tools/alpha/tool.yaml"),
+        "name: alpha\n",
+    )
+    .unwrap();
     let remote = hash_app_dir(remote_dir.path()).unwrap();
 
     let report = ToolSync::new().reconcile(root, &remote).await.unwrap();
     assert!(!root.join("tools/beta").exists());
     assert!(root.join("tools/alpha").exists());
-    assert!(
-        report
-            .deleted_local
-            .iter()
-            .any(|p| p == &PathBuf::from("tools/beta/tool.yaml") || p.starts_with("tools/beta"))
-    );
+    assert!(report
+        .deleted_local
+        .iter()
+        .any(|p| p == &PathBuf::from("tools/beta/tool.yaml") || p.starts_with("tools/beta")));
 }
 
 #[tokio::test]

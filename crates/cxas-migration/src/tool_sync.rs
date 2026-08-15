@@ -51,9 +51,7 @@ impl ToolSync {
         let remote_tools = restrict_tools(remote);
         let diff = diff_trees(&local_tools, &remote_tools);
 
-        let root_canon = local_root
-            .canonicalize()
-            .map_err(StateError::from)?;
+        let root_canon = local_root.canonicalize().map_err(StateError::from)?;
 
         let mut deleted_local = Vec::new();
         let mut prune_dirs = BTreeSet::new();

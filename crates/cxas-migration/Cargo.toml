@@ -9,6 +9,7 @@ rust-version = "1.80"
 default = []
 tui = []
 llm = []
+graphviz = []
 
 [dependencies]
 cxas-core = { path = "../cxas-core" }

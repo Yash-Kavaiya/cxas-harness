@@ -85,7 +85,10 @@ async fn iterate_deletes_losers_keeps_winner() {
         api: api.clone(),
         keep_winner: true,
     };
-    let kept = run.iterate_named(&["a", "b", "c"], 2 /* winner index */).await.unwrap();
+    let kept = run
+        .iterate_named(&["a", "b", "c"], 2 /* winner index */)
+        .await
+        .unwrap();
     assert_eq!(kept, vec![SnapshotName("c".into())]);
     let mut deleted = api.deleted.lock().unwrap().clone();
     deleted.sort();
