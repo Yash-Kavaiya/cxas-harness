@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
   "crates/cxas-parity",
+  "crates/cxas-discovery",
   "crates/cxas-proto",
   "crates/cxas-core",
   "crates/cxas-utils",
