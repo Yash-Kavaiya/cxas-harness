@@ -12,14 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod audio;
 mod bidi;
 mod cursor;
 mod error;
+mod report;
+mod simulation;
 mod turn_state;
 
+pub use audio::{AudioScore, AudioScorer, TranscriptExactScorer};
 pub use bidi::{AgentEvent, BidiSession, CesBidi, CompletedTurn};
 pub use cursor::{TurnCursor, UserInput};
 pub use error::EvalError;
+pub use report::{EvalReport, ExpectationResult, ReportSummary, TurnRow};
+pub use simulation::{
+    Expectation, Modality, RecordingBidi, SimCase, SimulationEvals, SimulationPlan,
+};
 pub use turn_state::TurnState;
 
 pub fn crate_name() -> &'static str {
