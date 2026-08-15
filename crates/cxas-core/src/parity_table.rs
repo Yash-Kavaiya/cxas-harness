@@ -12,21 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod apps;
-mod config;
-mod deployments;
-mod error;
-mod evaluations;
-mod location;
-pub mod parity_table;
-mod transport;
-
-pub use apps::{AppName, Apps};
-pub use config::{ClientConfig, Credentials};
-pub use deployments::{Deployment, DeploymentName, Deployments};
-pub use error::CoreError;
-pub use evaluations::{Evaluations, QuotaKind};
-pub use location::Location;
-pub use transport::{
-    CesTransport, ChannelSettings, ExportHandle, ExportRequest, NoopTransport, RecordingTransport,
-};
+/// Phase 0 Python classes owned by `cxas-core` (`rust_owner == "cxas-core"`).
+pub const CORE_PYTHON_CLASSES: &[&str] = &[
+    stringify!(Agents),
+    stringify!(Apps),
+    stringify!(Callbacks),
+    stringify!(Changelogs),
+    stringify!(Common),
+    stringify!(ConversationHistory),
+    stringify!(Deployments),
+    stringify!(Evaluations),
+    stringify!(Guardrails),
+    stringify!(Sessions),
+    stringify!(Tools),
+    stringify!(Variables),
+    stringify!(Versions),
+];
