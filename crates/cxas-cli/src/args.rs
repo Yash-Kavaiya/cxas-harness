@@ -46,6 +46,9 @@ pub fn build_parser() -> Command {
         .subcommand(init_github_action_cmd())
         .subcommand(trace_cmd())
         .subcommand(evals_cmd())
+        .subcommand(deploy_cmd())
+        .subcommand(diff_cmd())
+        .subcommand(state_cmd())
 }
 
 fn lint_cmd() -> Command {
@@ -115,4 +118,51 @@ fn evals_cmd() -> Command {
             .arg(Arg::new("output-dir").long("output-dir").num_args(1))
             .arg(Arg::new("output").long("output").num_args(1)),
     )
+}
+
+fn deploy_cmd() -> Command {
+    Command::new("deploy")
+        .arg(
+            Arg::new("app-dir")
+                .long("app-dir")
+                .num_args(1)
+                .default_value("."),
+        )
+        .arg(Arg::new("project-id").long("project-id").num_args(1))
+        .arg(Arg::new("location").long("location").num_args(1))
+        .arg(Arg::new("channel-type").long("channel-type").num_args(1))
+        .arg(
+            Arg::new("noise-cancellation")
+                .long("noise-cancellation")
+                .action(ArgAction::SetTrue),
+        )
+}
+
+fn diff_cmd() -> Command {
+    Command::new("diff")
+        .arg(
+            Arg::new("app-dir")
+                .long("app-dir")
+                .num_args(1)
+                .default_value("."),
+        )
+        .arg(Arg::new("location").long("location").num_args(1))
+        .arg(Arg::new("app").long("app").num_args(1))
+        .arg(
+            Arg::new("allow-drift")
+                .long("allow-drift")
+                .action(ArgAction::SetTrue),
+        )
+}
+
+fn state_cmd() -> Command {
+    Command::new("state")
+        .arg(
+            Arg::new("app-dir")
+                .long("app-dir")
+                .num_args(1)
+                .default_value("."),
+        )
+        .arg(Arg::new("location").long("location").num_args(1))
+        .arg(Arg::new("project-id").long("project-id").num_args(1))
 }

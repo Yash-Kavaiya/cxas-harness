@@ -13,9 +13,12 @@
 // limitations under the License.
 
 pub mod actions;
+pub mod deploy;
+pub mod diff;
 pub mod evals;
 pub mod lint;
 pub mod pull;
+pub mod state;
 pub mod trace;
 
 use crate::output::{write_err, OutputFormat};
@@ -45,6 +48,9 @@ pub fn dispatch(matches: &ArgMatches, out: &mut impl Write) -> i32 {
             Some(("report", report)) => evals::run(report, format, out),
             _ => write_err(out, format, "evals", "USAGE", "expected evals report", 2),
         },
+        Some(("deploy", sub)) => deploy::run(sub, format, out),
+        Some(("diff", sub)) => diff::run(sub, format, out),
+        Some(("state", sub)) => state::run(sub, format, out),
         Some((name, _)) => write_err(
             out,
             format,
