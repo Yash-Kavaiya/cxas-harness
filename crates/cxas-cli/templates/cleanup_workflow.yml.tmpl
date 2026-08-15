@@ -1,0 +1,11 @@
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+jobs:
+  cleanup:
+    strategy:
+      matrix:
+        environment: [{{ENVIRONMENTS}}]
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "cleanup {{AGENT}} ${{ matrix.environment }}"

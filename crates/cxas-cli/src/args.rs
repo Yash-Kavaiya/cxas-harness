@@ -42,6 +42,8 @@ pub fn build_parser() -> Command {
         )
         .subcommand(lint_cmd())
         .subcommand(pull_cmd())
+        .subcommand(actions_cmd())
+        .subcommand(init_github_action_cmd())
 }
 
 fn lint_cmd() -> Command {
@@ -65,4 +67,34 @@ fn pull_cmd() -> Command {
         .arg(Arg::new("location").long("location").num_args(1))
         .arg(Arg::new("version-id").long("version-id").num_args(1))
         .arg(Arg::new("project-id").long("project-id").num_args(1))
+}
+
+fn actions_flags() -> impl Iterator<Item = Arg> {
+    [
+        Arg::new("app-dir")
+            .long("app-dir")
+            .num_args(1)
+            .default_value("."),
+        Arg::new("auto-create-wif")
+            .long("auto-create-wif")
+            .action(ArgAction::SetTrue),
+        Arg::new("no-cleanup")
+            .long("no-cleanup")
+            .action(ArgAction::SetTrue),
+        Arg::new("workload-identity-provider")
+            .long("workload-identity-provider")
+            .num_args(1),
+        Arg::new("service-account")
+            .long("service-account")
+            .num_args(1),
+    ]
+    .into_iter()
+}
+
+fn actions_cmd() -> Command {
+    Command::new("actions").subcommand(Command::new("init").args(actions_flags()))
+}
+
+fn init_github_action_cmd() -> Command {
+    Command::new("init-github-action").args(actions_flags())
 }

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod actions;
 pub mod lint;
 pub mod pull;
 
@@ -25,6 +26,18 @@ pub fn dispatch(matches: &ArgMatches, out: &mut impl Write) -> i32 {
     match matches.subcommand() {
         Some(("lint", sub)) => lint::run(sub, format, out),
         Some(("pull", sub)) => pull::run(sub, format, out),
+        Some(("actions", sub)) => match sub.subcommand() {
+            Some(("init", init)) => actions::run(init, format, out),
+            _ => write_err(
+                out,
+                format,
+                "actions",
+                "USAGE",
+                "expected actions init",
+                2,
+            ),
+        },
+        Some(("init-github-action", sub)) => actions::run(sub, format, out),
         Some((name, _)) => write_err(
             out,
             format,
