@@ -30,6 +30,11 @@ pub enum DiscoveryError {
     Io(#[from] std::io::Error),
     #[error("parsing discovery document: {0}")]
     Parse(#[from] serde_json::Error),
+    /// Valid JSON that is not a usable discovery document. Reported rather
+    /// than tolerated: a model with nothing in it satisfies every coverage
+    /// and parity assertion vacuously.
+    #[error("not a usable discovery document: {0}")]
+    Malformed(String),
 }
 
 /// Crate name, mirroring the convention used by the sibling crates.

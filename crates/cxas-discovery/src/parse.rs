@@ -32,16 +32,8 @@ impl Discovery {
     pub fn parse(text: &str) -> Result<Self, DiscoveryError> {
         let root: Value = serde_json::from_str(text).map_err(DiscoveryError::Parse)?;
 
-        let revision = root
-            .get("revision")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string();
-        let version = root
-            .get("version")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_string();
+        let revision = required_str(&root, "revision")?;
+        let version = required_str(&root, "version")?;
 
         let mut methods = Vec::new();
         let mut parameter_enums = Vec::new();
@@ -72,6 +64,12 @@ impl Discovery {
             }
         }
 
+        if methods.is_empty() {
+            return Err(DiscoveryError::Malformed(
+                "declares no methods under `resources`".to_string(),
+            ));
+        }
+
         Ok(Discovery {
             revision,
             version,
@@ -79,6 +77,14 @@ impl Discovery {
             enum_fields,
             parameter_enums,
         })
+    }
+}
+
+/// A top-level string field a discovery document cannot be usable without.
+fn required_str(root: &Value, field: &str) -> Result<String, DiscoveryError> {
+    match root.get(field).and_then(Value::as_str) {
+        Some(v) if !v.is_empty() => Ok(v.to_string()),
+        _ => Err(DiscoveryError::Malformed(format!("missing `{field}`"))),
     }
 }
 

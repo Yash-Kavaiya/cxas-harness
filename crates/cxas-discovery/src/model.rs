@@ -46,7 +46,11 @@ pub struct ParameterEnum {
 }
 
 /// A parsed discovery document.
-#[derive(Debug, Clone, Default)]
+///
+/// Deliberately not `Default`: an empty document is exactly the vacuous model
+/// [`crate::DiscoveryError::Malformed`] exists to reject, and handing one out
+/// through a constructor would reopen that hole from the other side.
+#[derive(Debug, Clone)]
 pub struct Discovery {
     pub(crate) revision: String,
     pub(crate) version: String,

@@ -179,3 +179,37 @@ fn non_enum_parameter_is_not_a_parameter_enum() {
         .is_none());
     assert_eq!(d.parameter_enums().count(), 2);
 }
+
+#[test]
+fn structurally_empty_document_is_rejected() {
+    // `{}` is valid JSON, so it parses -- into a model with no revision and no
+    // methods, against which every coverage and parity assertion passes
+    // vacuously. That is the failure this crate exists to prevent, so a
+    // document that declares nothing is an error, not an empty model.
+    let f = write_fixture("{}");
+    let err = Discovery::load(f.path()).unwrap_err();
+    assert!(matches!(err, DiscoveryError::Malformed(_)), "got {err:?}");
+}
+
+#[test]
+fn document_without_revision_is_rejected() {
+    // Without a revision the drift check has nothing to compare, so the
+    // reference silently stops being pinned to anything.
+    let f = write_fixture(&FIXTURE.replace(r#""revision": "20260101","#, ""));
+    let err = Discovery::load(f.path()).unwrap_err();
+    assert!(
+        matches!(&err, DiscoveryError::Malformed(m) if m.contains("revision")),
+        "got {err:?}"
+    );
+}
+
+#[test]
+fn document_declaring_no_methods_is_rejected() {
+    // Stamped and versioned, but describing no API at all.
+    let f = write_fixture(r#"{ "revision": "20260101", "version": "v1test", "resources": {} }"#);
+    let err = Discovery::load(f.path()).unwrap_err();
+    assert!(
+        matches!(&err, DiscoveryError::Malformed(m) if m.contains("method")),
+        "got {err:?}"
+    );
+}
