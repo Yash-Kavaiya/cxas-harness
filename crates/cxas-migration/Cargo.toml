@@ -1,0 +1,24 @@
+[package]
+name = "cxas-migration"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+rust-version = "1.80"
+
+[features]
+default = []
+tui = []
+llm = []
+
+[dependencies]
+cxas-core = { path = "../cxas-core" }
+cxas-state = { path = "../cxas-state" }
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
