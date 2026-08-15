@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Issue coverage · cxas-harness</title>
+  <meta name="description" content="All 25 cataloged cxas-scrapi issues mapped to cxas-harness specs, plans, and closers.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="issues.html">
+<template id="page">
+  <p class="kicker">Project</p>
+  <h1>Issue coverage</h1>
+  <p class="lead">The rewrite is scored against Python parity <em>and</em> closing tests for the 25 open issues cataloged from <code>GoogleCloudPlatform/cxas-scrapi</code> at SHA <code>4f7b43ca6adda0acad95a7e3654eee4e2ed1438c</code>. Source of truth: <code>docs/superpowers/coverage-map.md</code>.</p>
+
+  <h2>Phases</h2>
+  <table>
+    <thead><tr><th>Phase</th><th>Title</th><th>Spec / plan</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>Foundations and parity contract</td><td><code>2026-08-15-parity-contract</code></td></tr>
+      <tr><td>1</td><td>Crate architecture / workspace</td><td><code>2026-08-15-workspace-architecture</code></td></tr>
+      <tr><td>2</td><td>Bidi-streaming and eval correctness</td><td><code>2026-08-15-bidi-eval-correctness</code></td></tr>
+      <tr><td>3</td><td>Lint and validation engine</td><td><code>2026-08-15-lint-validation</code></td></tr>
+      <tr><td>4</td><td>Migration and eval-run cleanup</td><td><code>2026-08-15-migration-lifecycle</code></td></tr>
+      <tr><td>5</td><td>Packaging, docs, and release</td><td><code>2026-08-15-packaging-cli-ci</code></td></tr>
+    </tbody>
+  </table>
+  <p>Gauntlet Loop is recorded as out-of-band process, not a Superpowers phase and not a runtime crate.</p>
+
+  <h2>All 25 issues</h2>
+  <table>
+    <thead><tr><th>Issue</th><th>Title</th><th>Closer in this repo</th></tr></thead>
+    <tbody>
+      <tr><td>#27</td><td>Audio Evaluations</td><td><code>AudioScorer</code></td></tr>
+      <tr><td>#46</td><td>Formal GitHub Actions</td><td><code>cxas actions init</code></td></tr>
+      <tr><td>#54</td><td>Multi-environment GHA via <code>environment.json</code></td><td><code>actions init</code> templates</td></tr>
+      <tr><td>#55</td><td>CLI ergonomics for coding agents</td><td>JSON envelope + exit codes</td></tr>
+      <tr><td>#86</td><td>Missing root-agent validation</td><td><code>V-ROOT</code></td></tr>
+      <tr><td>#99</td><td>Dependency Dashboard</td><td><code>deny.toml</code> + renovate</td></tr>
+      <tr><td>#131</td><td><code>cxas diff</code> / <code>cxas state</code></td><td><code>cxas-state</code> + CLI</td></tr>
+      <tr><td>#136</td><td>Voice simulations ignore returned audio</td><td><code>require_audio</code> / <code>MissingAgentAudio</code></td></tr>
+      <tr><td>#168</td><td>Hillclimbing leaves snapshots</td><td><code>SnapshotGuard</code></td></tr>
+      <tr><td>#188</td><td>SpeechPath</td><td><code>SpeechPathScorer</code></td></tr>
+      <tr><td>#206</td><td>Turn evals in combined report</td><td><code>TurnRow</code> + <code>evals report</code></td></tr>
+      <tr><td>#252</td><td><code>cxas pull --version-id</code></td><td><code>Apps::export_app_version</code></td></tr>
+      <tr><td>#256</td><td>Boolean types in environment templates</td><td><code>TemplateValue::Bool</code></td></tr>
+      <tr><td>#263</td><td>Evaluation <code>RunSession</code> quota</td><td><code>QuotaKind</code></td></tr>
+      <tr><td>#270</td><td>Unified workspace + cascading profiles</td><td><code>resolve_workspace</code></td></tr>
+      <tr><td>#284</td><td><code>EvaluationRunState</code> stub drift</td><td><code>Unknown(i32)</code></td></tr>
+      <tr><td>#298</td><td>Pull apps ≥ 4 MB</td><td>streamed <code>ExportHandle</code></td></tr>
+      <tr><td>#345</td><td>DTMF hang</td><td><code>BidiSession::drive_turn</code></td></tr>
+      <tr><td>#350</td><td><code>cxas trace</code> per-turn raw JSON</td><td><code>trace --raw</code></td></tr>
+      <tr><td>#355</td><td>Simulation repeats first utterance</td><td><code>TurnCursor</code></td></tr>
+      <tr><td>#386</td><td>Native <code>cxas deploy</code></td><td><code>deploy</code> command</td></tr>
+      <tr><td>#394</td><td>Cloud tool deletion not local</td><td><code>ToolSync</code></td></tr>
+      <tr><td>#397</td><td>Welcome-event + deployment-version</td><td><code>V-WELCOME</code>, <code>V-DEPVER</code></td></tr>
+      <tr><td>#401</td><td>Hardcoded <code>"global"</code> location (blocker)</td><td><code>Location</code> has no default</td></tr>
+      <tr><td>#403</td><td>Deployment channel settings</td><td><code>ChannelSettings</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout ok">
+    <strong>Count: 25</strong>
+    Each row names a spec (via its phase) and at least one plan task that starts with a failing test. In-process tests close the issue class; they do not claim a live CES reproduction.
+  </div>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>

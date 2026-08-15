@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Architecture · cxas-harness</title>
+  <meta name="description" content="Environment chart, crate graph, Location newtype, and data flow for cxas-harness.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+</head>
+<body data-page="architecture.html">
+<template id="page">
+  <p class="kicker">Product</p>
+  <h1>Architecture</h1>
+  <p class="lead">Operators and coding agents talk only to the <code>cxas</code> binary. The binary delegates to workspace crates. Live CES and Vertex sit on the other side of a transport trait that this checkout implements with mocks.</p>
+
+  <h2>Environment chart</h2>
+  <pre class="mermaid">
+flowchart TB
+    subgraph operator [Operator / CI / coding agent]
+        Human[Human or automation]
+        IDE[Agentic IDE]
+    end
+
+    Human --> CLI
+    IDE --> CLI
+
+    subgraph cli [cxas-cli]
+        CLI["cxas binary JSON envelope + exit codes"]
+        Catalog[".cxas/catalog.json local app catalog"]
+        CLI --> Catalog
+    end
+
+    subgraph workspace [Rust workspace]
+        Core["cxas-core Location, Apps, Deployments, QuotaKind"]
+        State["cxas-state hash / diff / cascading profiles"]
+        Lint["cxas-lint V-ROOT + 60+ rules"]
+        Evals["cxas-evals TurnCursor, BidiSession, AudioScorer"]
+        Mig["cxas-migration SnapshotGuard, ToolSync, DFCX pipeline"]
+        Utils["cxas-utils paginate + boolean templates"]
+        Parity["cxas-parity frozen Python surface"]
+        Proto["cxas-proto EvaluationRunState::Unknown"]
+    end
+
+    CLI --> Core
+    CLI --> State
+    CLI --> Lint
+    CLI --> Evals
+    CLI --> Mig
+    Core --> Proto
+    Core --> Utils
+    Evals --> Core
+    Mig --> Core
+    Mig --> State
+    Core --> Parity
+
+    subgraph future [Not in this checkout]
+        CES["CES / Dialogflow CX APIs"]
+        Vertex["Vertex / Gemini"]
+        GCP["GCP project + region"]
+    end
+
+    Core -.->|"future live transport"| CES
+    Evals -.->|"future STT / eval quota"| Vertex
+    CES -.-> GCP
+    Vertex -.-> GCP
+  </pre>
+
+  <h2>Workspace layout</h2>
+  <pre><code>cxas-harness/
+  crates/           nine members listed in Cargo.toml
+  parity/           cxas-scrapi-parity.yaml
+  proto/ces/        EvaluationRunState proto
+  schema/           lint required-field schema
+  docs/superpowers/ specs, plans, coverage-map
+  docs-site/        this website (GitHub Pages source)
+  book/             mdBook sidebar (Docs / Examples / Skills / SDK)
+  tools/            Superpowers validator</code></pre>
+
+  <h2>Location newtype</h2>
+  <p><code>cxas_core::Location</code> is a newtype around <code>String</code> with no <code>Default</code> impl.</p>
+  <ul>
+    <li><code>Location::new("")</code> and whitespace-only → <code>CoreError::LocationRequired</code></li>
+    <li><code>Location::new("__default_global__")</code> → <code>CoreError::LocationHardcodedGlobalForbidden</code></li>
+    <li><code>Location::new("global")</code> succeeds</li>
+    <li><code>Location::new("us")</code>, <code>"europe-west1"</code>, and other regional IDs succeed</li>
+  </ul>
+  <p>This is the compile-time and runtime closer for blocker #401 (hardcoded <code>vertex_location = "global"</code> in Python).</p>
+
+  <h2>Transport seam</h2>
+  <p><code>cxas_core::CesTransport</code> is the interface for CES RPCs. Implementations in this checkout:</p>
+  <table>
+    <thead><tr><th>Type</th><th>Use</th></tr></thead>
+    <tbody>
+      <tr><td><code>NoopTransport</code></td><td>Default in-process stub. Export and mutate calls succeed with empty or fixture payloads.</td></tr>
+      <tr><td><code>RecordingTransport</code></td><td>Captures requests for tests (export stream, version-id, channel settings).</td></tr>
+    </tbody>
+  </table>
+  <p>A future live transport would implement the same trait and talk to CES. The CLI already goes through this seam for <code>pull</code>, <code>deploy</code>, and app export.</p>
+
+  <h2>CLI I/O contract</h2>
+  <p>Designed for issue #55 (CLI ergonomics for coding agents):</p>
+  <ul>
+    <li>Default <code>--format json</code></li>
+    <li><code>--no-input</code> defaults true so the process never blocks on stdin</li>
+    <li>Stdout is one JSON object per invocation (<code>Envelope</code>)</li>
+    <li>Exit 0 success, 1 runtime/lint/eval/drift, 2 usage/TTY/feature</li>
+  </ul>
+
+  <h2>Quality bar</h2>
+  <p>Acceptance is dual: (a) the Phase 0 parity manifest’s types and CLI argv are owned by crates, and (b) every cataloged issue has a closing unit test named in the plan. See <a href="issues.html">Issue coverage</a>.</p>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>

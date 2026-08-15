@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CLI reference · cxas-harness</title>
+  <meta name="description" content="Complete cxas CLI reference: global flags, JSON envelope, exit codes, and every subcommand.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="cli.html">
+<template id="page">
+  <p class="kicker">Product</p>
+  <h1>CLI reference</h1>
+  <p class="lead">The <code>cxas</code> binary is machine-first. Flags are long-form. Global options apply to every subcommand.</p>
+
+  <h2>Global flags</h2>
+  <table>
+    <thead><tr><th>Flag</th><th>Default</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>--format json|human</code></td><td><code>json</code></td><td>Stdout shape</td></tr>
+      <tr><td><code>--no-input</code></td><td>true</td><td>Never wait on stdin</td></tr>
+      <tr><td><code>--oauth-token</code></td><td>unset</td><td>Reserved for a future live transport</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Exit codes</h2>
+  <table>
+    <thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td>Success</td></tr>
+      <tr><td>1</td><td>Runtime / CES / lint / eval / drift failure</td></tr>
+      <tr><td>2</td><td>Usage, missing location, TTY required, disabled feature</td></tr>
+    </tbody>
+  </table>
+
+  <h2>JSON envelope</h2>
+  <pre><code>{ "ok": true,  "command": "lint", "data": { } }
+{ "ok": false, "command": "pull", "error": { "code": "LOCATION_REQUIRED", "message": "..." } }</code></pre>
+  <p>Human format prints a short line instead of the envelope. Error lines look like <code>error LOCATION_REQUIRED: ...</code>.</p>
+
+  <h2>Commands</h2>
+  <p>What each command does <em>in this checkout</em>. Cloud-shaped verbs persist or read the local catalog unless noted.</p>
+  <table>
+    <thead><tr><th>Command</th><th>Important flags</th><th>Behavior here</th></tr></thead>
+    <tbody>
+      <tr><td><code>init</code></td><td><code>--app-dir</code></td><td>Write <code>app.yaml</code> + root agent skeleton</td></tr>
+      <tr><td><code>local create</code></td><td><code>--app-dir</code></td><td>Same local scaffold as <code>init</code></td></tr>
+      <tr><td><code>lint</code></td><td><code>--app-dir</code> (default <code>.</code>)</td><td>Structural lint: V-ROOT and registry rules</td></tr>
+      <tr><td><code>create</code></td><td><code>--name</code> <code>--app-id</code> <code>--location</code> <code>--project-id</code></td><td>Insert an app into the catalog</td></tr>
+      <tr><td><code>delete</code></td><td><code>--app</code> / <code>--app-name</code> / <code>--display-name</code></td><td>Remove catalog app</td></tr>
+      <tr><td><code>apps list</code></td><td><code>--location</code> <code>--project-id</code> <code>--app</code></td><td>List catalog apps</td></tr>
+      <tr><td><code>apps get</code></td><td><code>--app</code> + location</td><td>Get one catalog app</td></tr>
+      <tr><td><code>push</code></td><td><code>--app-dir</code> <code>--app</code></td><td>Record a local import against the catalog</td></tr>
+      <tr><td><code>branch</code></td><td><code>--source</code> <code>--new-name</code></td><td>Clone a catalog app under a new name</td></tr>
+      <tr><td><code>deploy</code></td><td><code>--app-dir</code> <code>--channel-type</code> <code>--noise-cancellation</code></td><td>Record a local deployment (no Cloud RPC)</td></tr>
+      <tr><td><code>pull</code></td><td><code>--app</code> <code>--target-dir</code> <code>--version-id</code></td><td>Streamed export via mock transport; writes files</td></tr>
+      <tr><td><code>state</code></td><td><code>--app-dir</code> + location</td><td>Content hash of the local tree</td></tr>
+      <tr><td><code>diff</code></td><td><code>--app-dir</code> <code>--allow-drift</code></td><td>Drift vs remote tree; exit 1 on drift unless allowed</td></tr>
+      <tr><td><code>run</code></td><td><code>--wait</code> <code>--evaluation-id</code></td><td>Eval runner against fixtures / mocks</td></tr>
+      <tr><td><code>test-tools</code></td><td><code>--test-file</code> <code>--app-name</code></td><td>Tool eval runner</td></tr>
+      <tr><td><code>test-callbacks</code> / <code>test-single-callback</code></td><td><code>--app-dir</code></td><td>Callback eval runner</td></tr>
+      <tr><td><code>evals report</code></td><td><code>--output-dir</code> / <code>--output</code></td><td>Combined HTML/JSON report including turn rows</td></tr>
+      <tr><td><code>trace --raw</code></td><td><code>--app-name</code></td><td>Per-turn JSON</td></tr>
+      <tr><td><code>export</code> / <code>push-eval</code></td><td><code>--evaluation-id</code> / <code>--file</code></td><td>Eval artifact helpers</td></tr>
+      <tr><td><code>actions init</code></td><td><code>--app-dir</code> WIF flags</td><td>Write GitHub Actions from <code>environment.json</code></td></tr>
+      <tr><td><code>init-github-action</code></td><td>same as actions init</td><td>Alias</td></tr>
+      <tr><td><code>migrate dfcx</code></td><td><code>--source</code> <code>--zip</code> <code>--yes</code></td><td>Non-interactive DFCX pipeline</td></tr>
+      <tr><td><code>conversations list|get</code></td><td>location + resource name</td><td>Catalog / mock conversations</td></tr>
+      <tr><td><code>deployments list|create|promote</code></td><td><code>--deployment-id</code> <code>--version</code> <code>--channel-type</code></td><td>Catalog deployments</td></tr>
+      <tr><td><code>versions list|compare</code></td><td><code>--app</code></td><td>Catalog versions</td></tr>
+      <tr><td><code>insights</code></td><td>location</td><td>Mock insights payload</td></tr>
+      <tr><td><code>ci-test</code> / <code>local-test</code></td><td><code>--display-name</code></td><td>CI-shaped eval wrappers</td></tr>
+      <tr><td><code>agent</code> / <code>tool</code> / <code>guardrail</code></td><td><code>--app-dir</code></td><td>Local resource helpers</td></tr>
+      <tr><td><code>llm-lint</code></td><td><code>--app-dir</code></td><td>Requires <code>--features llm</code></td></tr>
+      <tr><td><code>run-session</code></td><td>—</td><td>Requires a TTY; otherwise exit 2</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Location-bearing flags</h2>
+  <p>Most CES-shaped commands accept:</p>
+  <pre><code>--location &lt;id&gt;
+--project-id &lt;id&gt;</code></pre>
+  <p>Omitting <code>--location</code> on those commands is a usage error (exit 2, code <code>LOCATION_REQUIRED</code>).</p>
+
+  <h2>Actions init</h2>
+  <p>Closes #46 and #54. Reads <code>environment.json</code> under <code>--app-dir</code> and writes workflow templates from <code>crates/cxas-cli/templates/</code>.</p>
+  <ul>
+    <li><code>--auto-create-wif</code></li>
+    <li><code>--no-cleanup</code></li>
+    <li><code>--workload-identity-provider</code></li>
+    <li><code>--service-account</code></li>
+  </ul>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Evals and audio · cxas-harness</title>
+  <meta name="description" content="TurnCursor, BidiSession DTMF wait, audio scoring, and combined eval reports.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="evals.html">
+<template id="page">
+  <p class="kicker">Engines</p>
+  <h1>Evals and audio</h1>
+  <p class="lead"><code>cxas-evals</code> owns simulation playback, bidirectional DTMF, audio scoring, and the combined report. The CLI surfaces those engines as <code>run</code>, <code>test-tools</code>, <code>test-callbacks</code>, <code>evals report</code>, and <code>trace --raw</code>.</p>
+
+  <h2>TurnCursor (#355)</h2>
+  <p>Python simulations reused the first <code>static_utterance</code> on every turn. <code>TurnCursor</code> holds the remaining <code>UserInput</code> list and advances after each turn. A second call cannot observe the first utterance again unless the plan repeats it.</p>
+
+  <h2>Bidi DTMF (#345)</h2>
+  <p><code>BidiSession::drive_turn</code> sends user input, then waits for an agent event or a timeout. It does not close the stream immediately after DTMF. Tests use <code>RecordingBidi</code> so no live CES session is required.</p>
+
+  <h2>Audio and SpeechPath (#27, #136, #188)</h2>
+  <ul>
+    <li><code>require_audio</code> fails a voice case when the agent returned no audio (<code>MissingAgentAudio</code>)</li>
+    <li><code>TranscriptExactScorer</code> compares expected vs actual transcript</li>
+    <li><code>SpeechPathScorer</code> scores the speech path, not only text</li>
+    <li><code>HttpStt</code> is the seam for a future Vertex STT client</li>
+  </ul>
+
+  <h2>Quota (#263)</h2>
+  <p>Evaluation <code>RunSession</code> uses <code>QuotaKind</code> from <code>cxas-core</code>, separate from ordinary chat quota. The mock transport records the kind so tests can assert the dedicated client is selected.</p>
+
+  <h2>Reports (#206, #350)</h2>
+  <pre><code>cargo run -p cxas-cli -- evals report --output-dir ./out
+cargo run -p cxas-cli -- trace --raw --app-name demo --location us</code></pre>
+  <p><code>evals report</code> writes combined HTML and JSON including <code>TurnRow</code> entries. <code>trace --raw</code> prints per-turn JSON for agent debugging.</p>
+
+  <h2>CLI mapping</h2>
+  <table>
+    <thead><tr><th>Command</th><th>Engine</th></tr></thead>
+    <tbody>
+      <tr><td><code>run</code> / <code>run --wait</code></td><td><code>SimulationEvals</code></td></tr>
+      <tr><td><code>test-tools</code></td><td><code>ToolEvals</code></td></tr>
+      <tr><td><code>test-callbacks</code></td><td><code>CallbackEvals</code></td></tr>
+      <tr><td><code>evals report</code></td><td><code>generate_combined_*_report</code></td></tr>
+      <tr><td><code>trace --raw</code></td><td>turn JSON dump</td></tr>
+      <tr><td><code>run-session</code></td><td>interactive; TTY required</td></tr>
+    </tbody>
+  </table>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>

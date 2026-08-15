@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local catalog · cxas-harness</title>
+  <meta name="description" content="How cxas-harness persists apps and deployments in .cxas/catalog.json.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="catalog.html">
+<template id="page">
+  <p class="kicker">Product</p>
+  <h1>Local catalog</h1>
+  <p class="lead">The CLI needs process-stable storage so <code>create</code> in one invocation is visible to <code>apps list</code> in the next. That store is a JSON file, not CES.</p>
+
+  <h2>Path</h2>
+  <ol>
+    <li>If <code>CXAS_CATALOG</code> is set, use that path.</li>
+    <li>Otherwise use <code>.cxas/catalog.json</code> relative to the current working directory.</li>
+  </ol>
+  <p><code>.cxas/</code> is gitignored. Tests should set <code>CXAS_CATALOG</code> to a temp file so they do not collide.</p>
+
+  <h2>Schema</h2>
+  <pre><code>{
+  "apps": [
+    {
+      "name": "projects/my-project/locations/us/apps/demo",
+      "display_name": "demo",
+      "project_id": "my-project",
+      "location": "us"
+    }
+  ],
+  "deployments": [
+    {
+      "name": "…/deployments/web",
+      "app_name": "projects/my-project/locations/us/apps/demo",
+      "channel_type": "web",
+      "version": "1"
+    }
+  ],
+  "conversations": [],
+  "versions": [],
+  "evaluations": []
+}</code></pre>
+  <p>Records are defined in <code>crates/cxas-cli/src/catalog.rs</code> as <code>AppRec</code>, <code>DeploymentRec</code>, and <code>Catalog</code>.</p>
+
+  <h2>Who writes it</h2>
+  <table>
+    <thead><tr><th>Command</th><th>Mutation</th></tr></thead>
+    <tbody>
+      <tr><td><code>create</code></td><td>Appends an <code>AppRec</code>. Location is stored exactly as passed.</td></tr>
+      <tr><td><code>delete</code></td><td>Removes matching apps (and related deployments).</td></tr>
+      <tr><td><code>branch</code></td><td>Copies a source app to <code>--new-name</code>.</td></tr>
+      <tr><td><code>push</code></td><td>Records that a local tree was imported.</td></tr>
+      <tr><td><code>deploy</code> / <code>deployments create</code></td><td>Appends a <code>DeploymentRec</code>.</td></tr>
+      <tr><td><code>apps list</code> / <code>get</code></td><td>Read-only filter by location / project / name.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Why a file, not memory</h2>
+  <p>An earlier in-memory <code>OnceLock</code> catalog looked fine inside one process and empty in the next. That made <code>apps list</code> after <code>create</code> appear broken when the CLI was launched via <code>cargo run</code> twice. Persistence is the contract.</p>
+
+  <div class="callout note">
+    <strong>Not a CES replica</strong>
+    The catalog is a developer fixture. It does not implement IAM, quotas, long-running operations, or regional routing. Resource names are strings the CLI composes from <code>--project-id</code>, <code>--location</code>, and the app display name.
+  </div>
+</template>
+<script src="assets/site.js"></script>
+</body>
+</html>
