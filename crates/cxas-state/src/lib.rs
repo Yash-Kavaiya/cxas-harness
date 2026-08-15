@@ -12,6 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod diff;
+mod hash;
+mod workspace;
+
+pub use diff::{diff_trees, StateDiff};
+pub use hash::{hash_app_dir, hash_bytes, AppTree, StateHash};
+pub use workspace::{resolve_workspace, ResolvedWorkspace, WorkspaceProfile};
+
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum StateError {
+    #[error("location is required and has no default")]
+    LocationRequired,
+    #[error("profile extends cycle")]
+    ProfileCycle,
+    #[error("path escapes workspace root")]
+    PathEscape,
+    #[error("cxas.workspace.yaml not found from {0}")]
+    WorkspaceNotFound(std::path::PathBuf),
+    #[error("profile not found: {0}")]
+    ProfileNotFound(String),
+    #[error("active profile is not set")]
+    ActiveProfileMissing,
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Yaml(#[from] serde_yaml::Error),
+}
+
 pub fn crate_name() -> &'static str {
     "cxas-state"
 }
