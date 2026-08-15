@@ -17,13 +17,14 @@ pub mod deploy;
 pub mod diff;
 pub mod evals;
 pub mod lint;
+pub mod migrate;
 pub mod pull;
 pub mod state;
 pub mod trace;
 
-use crate::output::{write_err, OutputFormat};
+use crate::output::{write_err, write_ok, OutputFormat};
 use clap::ArgMatches;
-use std::io::Write;
+use std::io::{IsTerminal, Write};
 use std::path::{Path, PathBuf};
 
 pub fn dispatch(matches: &ArgMatches, out: &mut impl Write) -> i32 {
@@ -51,14 +52,27 @@ pub fn dispatch(matches: &ArgMatches, out: &mut impl Write) -> i32 {
         Some(("deploy", sub)) => deploy::run(sub, format, out),
         Some(("diff", sub)) => diff::run(sub, format, out),
         Some(("state", sub)) => state::run(sub, format, out),
-        Some((name, _)) => write_err(
-            out,
-            format,
-            name,
-            "NOT_IMPLEMENTED",
-            &format!("{name} lands in this crate after its owning phase"),
-            1,
-        ),
+        Some(("migrate", sub)) => match sub.subcommand() {
+            Some(("dfcx", dfcx)) => migrate::run(dfcx, format, out),
+            _ => write_err(
+                out,
+                format,
+                "migrate",
+                "USAGE",
+                "expected migrate dfcx",
+                2,
+            ),
+        },
+        Some(("run-session", _)) => run_session(format, out),
+        Some(("llm-lint", sub)) => llm_lint(sub, format, out),
+        Some(("help", _)) => write_ok_help(format, out),
+        Some((name, sub)) => {
+            let command = match sub.subcommand() {
+                Some((child, _)) => format!("{name} {child}"),
+                None => name.to_string(),
+            };
+            not_implemented(out, format, &command)
+        }
         None => write_err(
             out,
             format,
@@ -68,6 +82,59 @@ pub fn dispatch(matches: &ArgMatches, out: &mut impl Write) -> i32 {
             2,
         ),
     }
+}
+
+fn not_implemented(out: &mut impl Write, format: OutputFormat, command: &str) -> i32 {
+    write_err(
+        out,
+        format,
+        command,
+        "NOT_IMPLEMENTED",
+        &format!("{command} lands in this crate after its owning phase"),
+        1,
+    )
+}
+
+fn run_session(format: OutputFormat, out: &mut impl Write) -> i32 {
+    if !std::io::stdin().is_terminal() {
+        return write_err(
+            out,
+            format,
+            "run-session",
+            "TTY_REQUIRED",
+            "run-session requires a TTY",
+            2,
+        );
+    }
+    not_implemented(out, format, "run-session")
+}
+
+fn llm_lint(_matches: &ArgMatches, format: OutputFormat, out: &mut impl Write) -> i32 {
+    #[cfg(not(feature = "llm"))]
+    {
+        return write_err(
+            out,
+            format,
+            "llm-lint",
+            "FEATURE_DISABLED",
+            "llm-lint requires --features llm",
+            2,
+        );
+    }
+    #[cfg(feature = "llm")]
+    {
+        not_implemented(out, format, "llm-lint")
+    }
+}
+
+fn write_ok_help(format: OutputFormat, out: &mut impl Write) -> i32 {
+    write_ok(
+        out,
+        format,
+        "help",
+        serde_json::json!({ "binary": "cxas" }),
+        "cxas --help",
+    )
 }
 
 pub fn opt_str(matches: &ArgMatches, name: &str) -> Option<String> {

@@ -18,7 +18,7 @@ pub fn build_parser() -> Command {
     Command::new("cxas")
         .about("Machine-first CXAS CLI")
         .no_binary_name(false)
-        .disable_help_subcommand(false)
+        .disable_help_subcommand(true)
         .arg(
             Arg::new("format")
                 .long("format")
@@ -49,6 +49,73 @@ pub fn build_parser() -> Command {
         .subcommand(deploy_cmd())
         .subcommand(diff_cmd())
         .subcommand(state_cmd())
+        .subcommand(migrate_cmd())
+        .subcommand(leaf("test-tools"))
+        .subcommand(leaf("test-callbacks"))
+        .subcommand(leaf("test-single-callback"))
+        .subcommand(leaf("export"))
+        .subcommand(leaf("push-eval"))
+        .subcommand(run_cmd())
+        .subcommand(leaf("run-session"))
+        .subcommand(leaf("ci-test"))
+        .subcommand(leaf("local-test"))
+        .subcommand(leaf("delete"))
+        .subcommand(push_cmd())
+        .subcommand(leaf("llm-lint"))
+        .subcommand(Command::new("help"))
+        .subcommand(leaf("init"))
+        .subcommand(leaf("create"))
+        .subcommand(leaf("branch"))
+        .subcommand(parent("apps", &["list", "get"]))
+        .subcommand(parent("conversations", &["list", "get"]))
+        .subcommand(parent("deployments", &["list", "create", "promote"]))
+        .subcommand(parent("local", &["create"]))
+        .subcommand(parent("versions", &["list", "compare"]))
+        .subcommand(leaf("insights"))
+        .subcommand(leaf("agent"))
+        .subcommand(leaf("tool"))
+        .subcommand(leaf("guardrail"))
+}
+
+fn leaf(name: &'static str) -> Command {
+    Command::new(name)
+}
+
+fn parent(name: &'static str, children: &[&'static str]) -> Command {
+    let mut cmd = Command::new(name).subcommand_required(false);
+    for child in children {
+        cmd = cmd.subcommand(Command::new(*child));
+    }
+    cmd
+}
+
+fn migrate_cmd() -> Command {
+    Command::new("migrate").subcommand(
+        Command::new("dfcx")
+            .arg(Arg::new("source").long("source").num_args(1))
+            .arg(Arg::new("agent-id").long("agent-id").num_args(1))
+            .arg(Arg::new("zip").long("zip").num_args(1))
+            .arg(Arg::new("project-id").long("project-id").num_args(1))
+            .arg(Arg::new("location").long("location").num_args(1))
+            .arg(Arg::new("target-name").long("target-name").num_args(1))
+            .arg(Arg::new("display-name").long("display-name").num_args(1))
+            .arg(Arg::new("profile").long("profile").num_args(1))
+            .arg(Arg::new("yes").long("yes").action(ArgAction::SetTrue)),
+    )
+}
+
+fn run_cmd() -> Command {
+    Command::new("run")
+        .arg(Arg::new("wait").long("wait").action(ArgAction::SetTrue))
+        .arg(Arg::new("app-dir").long("app-dir").num_args(1))
+        .arg(Arg::new("location").long("location").num_args(1))
+}
+
+fn push_cmd() -> Command {
+    Command::new("push")
+        .arg(Arg::new("app-dir").long("app-dir").num_args(1))
+        .arg(Arg::new("app").long("app").num_args(1))
+        .arg(Arg::new("location").long("location").num_args(1))
 }
 
 fn lint_cmd() -> Command {
