@@ -22,6 +22,8 @@ cargo run -p cxas-cli -- --help
 | Local catalog | File-backed app/deployment store at `.cxas/catalog.json` (no implicit `"global"` location) |
 | Workspace crates | Independent libraries for proto, core, evals, lint, migration, state, utils |
 | Quality bar | Unit tests close the cataloged `cxas-scrapi` issue classes (enum drift, eval cursor, DTMF hang, lint root-agent, snapshot RAII, …) |
+| Benchmark | Google's own CES discovery documents, vendored at a pinned revision — 66 methods in v1, 104 in v1beta |
+| Gauntlet Loop | Builder/blind-critic loop under `gauntlet/`, scored against that benchmark |
 
 This checkout talks to a **local catalog and mocks**, not live CES/GCP. Location is never defaulted to `"global"`.
 
@@ -202,6 +204,27 @@ Representative closers already tested in-process:
 | #86 | `V-ROOT` fails lint when `root_agent` is missing or dangling |
 | #168 | `SnapshotGuard` deletes hillclimb snapshots on drop / panic / cancel |
 | #256 | Environment templates render JSON booleans |
+
+## Benchmark and the Gauntlet Loop
+
+The API benchmark is Google's own CES discovery documents, vendored under
+[`reference/ces/`](reference/ces/) at a pinned revision: **66 methods in v1, 104
+in v1beta**. [`crates/cxas-discovery`](crates/cxas-discovery) parses them, and
+`cxas-parity` asserts that every enum variant this workspace declares matches
+its CES wire spelling exactly.
+
+That contract found a real defect on its first run. `EvaluationRunState`
+declared `PENDING`/`SUCCEEDED`/`FAILED` where CES declares
+`QUEUED`/`COMPLETED`/`ERROR` — the test closing the enum-drift bug (#284) had
+itself drifted, invisibly to 78 passing tests. The previous parity contract
+could not have caught it: it asserted that a checked-in YAML contained strings
+that same YAML declared.
+
+[`gauntlet/`](gauntlet/) builds on that benchmark. Builder agents work per
+crate, each paired with a blind critic that sees only test output, clippy
+results, discovery coverage, and issue reproductions — never the source or the
+builder's reasoning. Blindness is enforced by a test, not by instruction. See
+[`gauntlet/README.md`](gauntlet/README.md).
 
 ## Design docs
 
