@@ -17,6 +17,7 @@ mod diagnostic;
 mod error;
 mod registry;
 mod rules;
+pub mod schema_map;
 
 pub use context::{discover, AgentDoc, DeploymentDoc, EvalDoc, LintContext, ToolDoc};
 pub use diagnostic::{Diagnostic, LintReport, Severity};

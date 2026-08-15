@@ -13,9 +13,14 @@
 // limitations under the License.
 
 pub mod root;
+pub mod schema;
+pub mod structural;
 
 use crate::registry::LintRule;
 
 pub fn builtin_rules() -> Vec<Box<dyn LintRule>> {
-    vec![Box::new(root::VRootRule)]
+    let mut rules: Vec<Box<dyn LintRule>> = vec![Box::new(root::VRootRule)];
+    rules.extend(schema::schema_rules());
+    rules.extend(structural::structural_rules());
+    rules
 }
