@@ -53,10 +53,7 @@ async fn dtmf_turn_waits_for_agent_before_returning() {
 
 #[tokio::test]
 async fn silent_agent_times_out_instead_of_hanging() {
-    let mut session = BidiSession::new(
-        Scripted { events: vec![] },
-        Duration::from_millis(50),
-    );
+    let mut session = BidiSession::new(Scripted { events: vec![] }, Duration::from_millis(50));
     let started = std::time::Instant::now();
     let err = session
         .drive_turn(&UserInput::Dtmf("2".into()))

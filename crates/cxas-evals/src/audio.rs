@@ -80,7 +80,11 @@ impl<H: HttpStt> SpeechPathScorer<H> {
         }
     }
 
-    fn score_transcript(transcript: String, expected_transcript: &str, threshold: f32) -> AudioScore {
+    fn score_transcript(
+        transcript: String,
+        expected_transcript: &str,
+        threshold: f32,
+    ) -> AudioScore {
         let passed = normalize(&transcript) == normalize(expected_transcript);
         AudioScore {
             match_score: if passed { 1.0 } else { 0.0 },

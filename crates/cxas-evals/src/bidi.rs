@@ -36,7 +36,10 @@ pub struct CompletedTurn {
 }
 
 pub trait CesBidi {
-    fn send_user(&mut self, input: &UserInput) -> impl Future<Output = Result<(), EvalError>> + Send;
+    fn send_user(
+        &mut self,
+        input: &UserInput,
+    ) -> impl Future<Output = Result<(), EvalError>> + Send;
     fn recv_agent(&mut self) -> impl Future<Output = Result<AgentEvent, EvalError>> + Send;
     fn close(&mut self) -> impl Future<Output = Result<(), EvalError>> + Send;
 }

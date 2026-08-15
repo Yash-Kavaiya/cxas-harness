@@ -180,6 +180,7 @@ impl SimulationEvals {
             let mut cursor = TurnCursor::new(case.utterances);
             let mut session = BidiSession::new((self.factory)(), DEFAULT_TURN_DEADLINE);
             let mut case_failed = false;
+            let mut case_errored = false;
 
             while let Some(input) = cursor.next().cloned() {
                 let user = input.display_text();
@@ -209,20 +210,19 @@ impl SimulationEvals {
                                         }
                                         Err(_) => {
                                             case_failed = true;
-                                            summary.errored += 1;
+                                            case_errored = true;
                                         }
                                     }
                                 }
                                 Err(EvalError::MissingAgentAudio) => {
                                     case_failed = true;
-                                    summary.failed += 1;
                                 }
                                 Err(EvalError::Core(CoreError::LocationRequired)) => {
                                     return Err(EvalError::Core(CoreError::LocationRequired));
                                 }
                                 Err(_) => {
                                     case_failed = true;
-                                    summary.errored += 1;
+                                    case_errored = true;
                                 }
                             }
                         }
@@ -262,7 +262,7 @@ impl SimulationEvals {
                         return Err(EvalError::Core(CoreError::Transport(msg)));
                     }
                     Err(_) => {
-                        summary.errored += 1;
+                        case_errored = true;
                         case_failed = true;
                     }
                 }
@@ -270,7 +270,9 @@ impl SimulationEvals {
 
             if !case_failed {
                 summary.passed += 1;
-            } else if summary.errored == 0 {
+            } else if case_errored {
+                summary.errored += 1;
+            } else {
                 summary.failed += 1;
             }
         }

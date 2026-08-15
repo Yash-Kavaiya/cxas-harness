@@ -54,3 +54,44 @@ impl EvalReport {
         }
     }
 }
+
+pub fn generate_combined_json_report(report: &EvalReport) -> String {
+    serde_json::to_string_pretty(report).unwrap_or_else(|_| "{\"turns\":[]}".into())
+}
+
+pub fn generate_combined_html_report(report: &EvalReport) -> String {
+    let mut rows = String::new();
+    for turn in &report.turns {
+        let audio = match &turn.audio {
+            Some(score) => format!(
+                "{} ({:.2})",
+                html_escape(&score.transcript),
+                score.match_score
+            ),
+            None => String::new(),
+        };
+        rows.push_str(&format!(
+            "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+            html_escape(&turn.case_id),
+            turn.turn_index,
+            html_escape(&turn.user),
+            html_escape(&turn.agent_text),
+            audio,
+            turn.latency_ms
+        ));
+    }
+    format!(
+        "<!DOCTYPE html><html><body><h1>Eval report</h1>\
+         <p>passed={} failed={} errored={}</p>\
+         <table><thead><tr><th>case</th><th>turn</th><th>user</th><th>agent</th><th>audio</th><th>latency_ms</th></tr></thead>\
+         <tbody>{}</tbody></table></body></html>",
+        report.summary.passed, report.summary.failed, report.summary.errored, rows
+    )
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
