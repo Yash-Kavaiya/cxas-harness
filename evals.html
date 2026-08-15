@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body data-page="evals.html">
-<template id="page">
+<article class="page" id="content">
   <p class="kicker">Engines</p>
   <h1>Evals and audio</h1>
   <p class="lead"><code>cxas-evals</code> owns simulation playback, bidirectional DTMF, audio scoring, and the combined report. The CLI surfaces those engines as <code>run</code>, <code>test-tools</code>, <code>test-callbacks</code>, <code>evals report</code>, and <code>trace --raw</code>.</p>
@@ -49,7 +49,7 @@ cargo run -p cxas-cli -- trace --raw --app-name demo --location us</code></pre>
       <tr><td><code>run-session</code></td><td>interactive; TTY required</td></tr>
     </tbody>
   </table>
-</template>
+</article>
 <script src="assets/site.js"></script>
 </body>
 </html>

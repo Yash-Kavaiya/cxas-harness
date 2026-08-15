@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body data-page="examples.html">
-<template id="page">
+<article class="page" id="content">
   <p class="kicker">Start</p>
   <h1>Examples</h1>
   <p class="lead">These sequences run against the local catalog and mocks. Prefix with <code>cargo run -p cxas-cli --</code> or put <code>target/debug</code> on <code>PATH</code>.</p>
@@ -67,7 +67,7 @@ cxas trace --raw --app-name demo --location us</code></pre>
   <h2>9. Fail closed on location</h2>
   <pre><code>cxas apps list --project-id my-project
 # exit 2, error.code = LOCATION_REQUIRED</code></pre>
-</template>
+</article>
 <script src="assets/site.js"></script>
 </body>
 </html>

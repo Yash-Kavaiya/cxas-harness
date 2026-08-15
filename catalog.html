@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body data-page="catalog.html">
-<template id="page">
+<article class="page" id="content">
   <p class="kicker">Product</p>
   <h1>Local catalog</h1>
   <p class="lead">The CLI needs process-stable storage so <code>create</code> in one invocation is visible to <code>apps list</code> in the next. That store is a JSON file, not CES.</p>
@@ -34,7 +34,7 @@
   ],
   "deployments": [
     {
-      "name": "…/deployments/web",
+      "name": "â€¦/deployments/web",
       "app_name": "projects/my-project/locations/us/apps/demo",
       "channel_type": "web",
       "version": "1"
@@ -66,7 +66,7 @@
     <strong>Not a CES replica</strong>
     The catalog is a developer fixture. It does not implement IAM, quotas, long-running operations, or regional routing. Resource names are strings the CLI composes from <code>--project-id</code>, <code>--location</code>, and the app display name.
   </div>
-</template>
+</article>
 <script src="assets/site.js"></script>
 </body>
 </html>

@@ -37,8 +37,7 @@
   ];
 
   const page = (document.body.dataset.page || "index.html").replace(/^\.\//, "");
-  const template = document.getElementById("page");
-  const pageContent = template ? template.content.cloneNode(true) : null;
+  const article = document.getElementById("content");
   const year = new Date().getFullYear();
 
   const navHtml = NAV.map((group) => {
@@ -51,9 +50,14 @@
     return `<nav class="nav-group"><h2>${group.title}</h2>${links}</nav>`;
   }).join("");
 
-  document.body.innerHTML = `
-    <a class="skip" href="#content">Skip to content</a>
-    <header class="topbar">
+  const skip = document.createElement("a");
+  skip.className = "skip";
+  skip.href = "#content";
+  skip.textContent = "Skip to content";
+
+  const header = document.createElement("header");
+  header.className = "topbar";
+  header.innerHTML = `
       <button class="menu-btn" type="button" aria-label="Open navigation">Menu</button>
       <a class="brand" href="index.html">
         <img src="assets/favicon.svg" alt="">
@@ -66,23 +70,32 @@
       <div class="top-links">
         <a href="https://github.com/Yash-Kavaiya/cxas-harness">GitHub</a>
         <a href="https://github.com/Yash-Kavaiya/cxas-harness/blob/master/README.md">README</a>
-      </div>
-    </header>
-    <div class="layout">
-      <aside class="sidebar" id="sidebar">${navHtml}</aside>
-      <main class="main">
-        <article class="page" id="content"></article>
-        <footer class="footer">
-          Apache-2.0 · Independent rewrite of Google Cloud cxas-scrapi · not an official Google product · ${year}
-        </footer>
-      </main>
-    </div>
-  `;
+      </div>`;
 
-  const content = document.getElementById("content");
-  if (pageContent) content.appendChild(pageContent);
+  const layout = document.createElement("div");
+  layout.className = "layout";
+  const sidebar = document.createElement("aside");
+  sidebar.className = "sidebar";
+  sidebar.id = "sidebar";
+  sidebar.innerHTML = navHtml;
+  const main = document.createElement("main");
+  main.className = "main";
+  const footer = document.createElement("footer");
+  footer.className = "footer";
+  footer.textContent = `Apache-2.0 · Independent rewrite of Google Cloud cxas-scrapi · not an official Google product · ${year}`;
 
-  const sidebar = document.getElementById("sidebar");
+  if (article) {
+    article.classList.add("page");
+    main.appendChild(article);
+  }
+  main.appendChild(footer);
+  layout.appendChild(sidebar);
+  layout.appendChild(main);
+
+  document.body.prepend(skip);
+  document.body.insertBefore(header, skip.nextSibling);
+  document.body.insertBefore(layout, header.nextSibling);
+
   const menuBtn = document.querySelector(".menu-btn");
   menuBtn.addEventListener("click", () => sidebar.classList.toggle("open"));
   document.addEventListener("click", (event) => {

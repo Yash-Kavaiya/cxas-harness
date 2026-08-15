@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body data-page="lint.html">
-<template id="page">
+<article class="page" id="content">
   <p class="kicker">Engines</p>
   <h1>Lint engine</h1>
   <p class="lead"><code>cxas lint --app-dir &lt;path&gt;</code> loads the app tree, builds a <code>LintContext</code>, and runs every registered rule. Diagnostics are collected into a <code>LintReport</code> and printed as JSON (or human text).</p>
@@ -70,8 +70,8 @@ cargo run -p cxas-cli -- --format human lint --app-dir ./my-app</code></pre>
   agents/
     main/
       instruction.txt</code></pre>
-  <p>That tree is enough for <code>V-ROOT</code> and <code>V001</code>–<code>V003</code> to pass if <code>app.yaml</code> points <code>root_agent</code> at <code>main</code>.</p>
-</template>
+  <p>That tree is enough for <code>V-ROOT</code> and <code>V001</code>â€“<code>V003</code> to pass if <code>app.yaml</code> points <code>root_agent</code> at <code>main</code>.</p>
+</article>
 <script src="assets/site.js"></script>
 </body>
 </html>
