@@ -21,7 +21,7 @@
 mod model;
 mod parse;
 
-pub use model::{Discovery, EnumField, Method};
+pub use model::{Discovery, EnumField, Method, ParameterEnum};
 
 /// Failure modes when loading a discovery document.
 #[derive(Debug, thiserror::Error)]

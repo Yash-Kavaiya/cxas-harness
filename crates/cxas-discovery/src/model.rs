@@ -26,6 +26,23 @@ pub struct EnumField {
     pub schema: String,
     pub property: String,
     pub values: Vec<String>,
+    /// True when discovery declares the property as an array of these values,
+    /// i.e. the wire type is a list, not a single value.
+    pub repeated: bool,
+}
+
+/// One enum-valued query parameter on a REST method.
+///
+/// Kept apart from [`EnumField`] because a parameter is not a schema property:
+/// it has no schema behind it, so a schema-keyed lookup could never find it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParameterEnum {
+    pub method_id: String,
+    pub parameter: String,
+    pub values: Vec<String>,
+    /// True when discovery marks the parameter `repeated`, i.e. it may be
+    /// supplied more than once in the query string.
+    pub repeated: bool,
 }
 
 /// A parsed discovery document.
@@ -35,6 +52,7 @@ pub struct Discovery {
     pub(crate) version: String,
     pub(crate) methods: Vec<Method>,
     pub(crate) enum_fields: Vec<EnumField>,
+    pub(crate) parameter_enums: Vec<ParameterEnum>,
 }
 
 impl Discovery {
@@ -64,5 +82,15 @@ impl Discovery {
         self.enum_fields
             .iter()
             .find(|e| e.schema == schema && e.property == property)
+    }
+
+    pub fn parameter_enums(&self) -> impl Iterator<Item = &ParameterEnum> {
+        self.parameter_enums.iter()
+    }
+
+    pub fn parameter_enum(&self, method_id: &str, parameter: &str) -> Option<&ParameterEnum> {
+        self.parameter_enums
+            .iter()
+            .find(|p| p.method_id == method_id && p.parameter == parameter)
     }
 }
