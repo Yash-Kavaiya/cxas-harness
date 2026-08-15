@@ -15,8 +15,14 @@
 mod args;
 mod commands;
 mod output;
+mod transport;
 
 pub use args::build_parser;
+pub use transport::set_transport_for_test;
+
+pub mod test_support {
+    pub use crate::transport::{script_trace, RecordingTransport};
+}
 
 use crate::output::{write_err, OutputFormat};
 use std::io::Write;

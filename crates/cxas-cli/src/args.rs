@@ -44,6 +44,8 @@ pub fn build_parser() -> Command {
         .subcommand(pull_cmd())
         .subcommand(actions_cmd())
         .subcommand(init_github_action_cmd())
+        .subcommand(trace_cmd())
+        .subcommand(evals_cmd())
 }
 
 fn lint_cmd() -> Command {
@@ -97,4 +99,20 @@ fn actions_cmd() -> Command {
 
 fn init_github_action_cmd() -> Command {
     Command::new("init-github-action").args(actions_flags())
+}
+
+fn trace_cmd() -> Command {
+    Command::new("trace")
+        .arg(Arg::new("app-name").long("app-name").num_args(1))
+        .arg(Arg::new("app").long("app").num_args(1))
+        .arg(Arg::new("location").long("location").num_args(1))
+        .arg(Arg::new("raw").long("raw").action(ArgAction::SetTrue))
+}
+
+fn evals_cmd() -> Command {
+    Command::new("evals").subcommand(
+        Command::new("report")
+            .arg(Arg::new("output-dir").long("output-dir").num_args(1))
+            .arg(Arg::new("output").long("output").num_args(1)),
+    )
 }

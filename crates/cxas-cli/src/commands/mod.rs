@@ -13,8 +13,10 @@
 // limitations under the License.
 
 pub mod actions;
+pub mod evals;
 pub mod lint;
 pub mod pull;
+pub mod trace;
 
 use crate::output::{write_err, OutputFormat};
 use clap::ArgMatches;
@@ -38,6 +40,11 @@ pub fn dispatch(matches: &ArgMatches, out: &mut impl Write) -> i32 {
             ),
         },
         Some(("init-github-action", sub)) => actions::run(sub, format, out),
+        Some(("trace", sub)) => trace::run(sub, format, out),
+        Some(("evals", sub)) => match sub.subcommand() {
+            Some(("report", report)) => evals::run(report, format, out),
+            _ => write_err(out, format, "evals", "USAGE", "expected evals report", 2),
+        },
         Some((name, _)) => write_err(
             out,
             format,
