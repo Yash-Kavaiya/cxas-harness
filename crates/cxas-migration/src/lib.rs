@@ -12,6 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod error;
+mod hillclimb;
+mod snapshot;
+
+pub use error::{LifeError, MigrateError};
+pub use hillclimb::HillclimbRun;
+pub use snapshot::{
+    take_failed_deletes, CleanupQueue, SnapshotApi, SnapshotGuard, SnapshotName,
+};
+
 pub fn crate_name() -> &'static str {
     "cxas-migration"
 }
