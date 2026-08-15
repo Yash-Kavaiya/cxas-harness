@@ -12,6 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! Python `cxas-scrapi` surface reference — **CLI shape only**.
+//!
+//! These assertions describe what users expect the CLI to look like. They are
+//! NOT a correctness benchmark: the manifest is hand-written, so it asserts
+//! only that a checked-in file contains strings that same file declares.
+//! The API-correctness contract lives in `discovery_contract.rs`, which asserts
+//! against Google's vendored discovery documents. Where the two disagree,
+//! discovery wins.
+
 use cxas_parity::{load_bundled, ParityError, ParityManifest};
 
 #[test]
@@ -66,7 +75,7 @@ const REQUIRED_CLASSES: &[&str] = &[
 ];
 
 #[test]
-fn every_frozen_python_class_is_present() {
+fn python_surface_declares_every_frozen_class() {
     let m = load_bundled().unwrap();
     for class in REQUIRED_CLASSES {
         m.require_type(class)
@@ -161,7 +170,7 @@ const REQUIRED_METHODS: &[(&str, &[&str])] = &[
 ];
 
 #[test]
-fn spec_method_minima_are_present() {
+fn python_surface_declares_method_minima() {
     let m = load_bundled().unwrap();
     for (class, methods) in REQUIRED_METHODS {
         let ty = m
@@ -216,7 +225,7 @@ const REQUIRED_CLI: &[&[&str]] = &[
 ];
 
 #[test]
-fn frozen_cli_commands_are_present() {
+fn python_surface_declares_cli_commands() {
     let m = load_bundled().unwrap();
     for argv in REQUIRED_CLI {
         m.require_command(argv)

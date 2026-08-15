@@ -15,7 +15,10 @@ Source of truth for "done" of the spec/plan set: this file plus the files it nam
 | 4 | Migration and eval-run cleanup | `docs/superpowers/specs/2026-08-15-migration-lifecycle-design.md` | `docs/superpowers/plans/2026-08-15-migration-lifecycle.md` |
 | 5 | Packaging, docs, and release | `docs/superpowers/specs/2026-08-15-packaging-cli-ci-design.md` | `docs/superpowers/plans/2026-08-15-packaging-cli-ci.md` |
 
-Gauntlet Loop (source-doc overlay) is out-of-band process, not a Superpowers phase. Specs record it as non-runtime. No Gauntlet plan is required for this goal.
+Gauntlet Loop is implemented as repo tooling under `gauntlet/`, specified in
+`docs/superpowers/specs/2026-08-15-discovery-benchmark-gauntlet-design.md` and
+planned in `docs/superpowers/plans/2026-08-15-discovery-benchmark-gauntlet.md`.
+It is non-runtime: nothing under `gauntlet/` is a Cargo workspace member.
 
 ## Source-doc requirement map
 
@@ -74,4 +77,15 @@ Count: 25 issue rows. Each row names one spec file (via its phase) and at least 
 
 ## Quality bar
 
-`cxas-harness` is accepted when (a) the Phase 0 parity manifest's types and CLI argv are implemented by the owning crates and (b) every issue in the table has a closing unit test named in the corresponding plan task. That dual bar is restated in every spec's **Purpose** / **Issue-driven quality bar** paragraph.
+`cxas-harness` is accepted when (a) every enum and method the Rust crates
+declare resolves against the vendored CES discovery documents under
+`reference/ces/`, and (b) every issue in the table has a closing test that
+exercises behaviour verified against discovery rather than against a test
+double asserting the code's own assumptions.
+
+Clause (a) replaces the former parity-manifest bar, which was self-graded: it
+asserted that a checked-in YAML contained strings that same YAML declared, so
+it could never fail. It did not, for example, notice that
+`EvaluationRunState` declared `PENDING`/`SUCCEEDED`/`FAILED` where CES declares
+`QUEUED`/`COMPLETED`/`ERROR`. The Python parity manifest is retained as a
+CLI-shape reference only.
