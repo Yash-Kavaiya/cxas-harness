@@ -1,0 +1,13 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/cxas-parity",
+  "crates/cxas-proto",
+  "crates/cxas-core",
+  "crates/cxas-utils",
+  "crates/cxas-state",
+  "crates/cxas-evals",
+  "crates/cxas-migration",
+  "crates/cxas-lint",
+  "crates/cxas-cli",
+]
