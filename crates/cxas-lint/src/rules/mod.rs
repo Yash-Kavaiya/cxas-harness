@@ -12,14 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod depver;
 pub mod root;
 pub mod schema;
 pub mod structural;
+pub mod welcome;
 
 use crate::registry::LintRule;
 
 pub fn builtin_rules() -> Vec<Box<dyn LintRule>> {
-    let mut rules: Vec<Box<dyn LintRule>> = vec![Box::new(root::VRootRule)];
+    let mut rules: Vec<Box<dyn LintRule>> = vec![
+        Box::new(root::VRootRule),
+        Box::new(welcome::VWelcomeRule),
+        Box::new(depver::VDepverRule),
+    ];
     rules.extend(schema::schema_rules());
     rules.extend(structural::structural_rules());
     rules
