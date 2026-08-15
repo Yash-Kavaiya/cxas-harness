@@ -12,14 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod cursor;
-mod error;
-mod turn_state;
-
-pub use cursor::{TurnCursor, UserInput};
-pub use error::EvalError;
-pub use turn_state::TurnState;
-
-pub fn crate_name() -> &'static str {
-    "cxas-evals"
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TurnState {
+    AwaitingUserTurn,
+    AwaitingAgentTurn,
+    Terminated,
 }
