@@ -1,4 +1,6 @@
 /target/
+**/target/
+.cxas/
 .worktrees/
 **/*.rs.bk
 .superpowers/sdd/

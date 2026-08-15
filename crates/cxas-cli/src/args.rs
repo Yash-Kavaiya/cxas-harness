@@ -50,43 +50,161 @@ pub fn build_parser() -> Command {
         .subcommand(diff_cmd())
         .subcommand(state_cmd())
         .subcommand(migrate_cmd())
-        .subcommand(leaf("test-tools"))
-        .subcommand(leaf("test-callbacks"))
-        .subcommand(leaf("test-single-callback"))
-        .subcommand(leaf("export"))
-        .subcommand(leaf("push-eval"))
+        .subcommand(file_cmd("test-tools", "test-file"))
+        .subcommand(dir_cmd("test-callbacks"))
+        .subcommand(dir_cmd("test-single-callback"))
+        .subcommand(eval_file_cmd("export", "evaluation-id"))
+        .subcommand(eval_file_cmd("push-eval", "file"))
         .subcommand(run_cmd())
         .subcommand(leaf("run-session"))
-        .subcommand(leaf("ci-test"))
-        .subcommand(leaf("local-test"))
-        .subcommand(leaf("delete"))
+        .subcommand(ci_cmd("ci-test"))
+        .subcommand(ci_cmd("local-test"))
+        .subcommand(delete_cmd())
         .subcommand(push_cmd())
-        .subcommand(leaf("llm-lint"))
+        .subcommand(dir_cmd("llm-lint"))
         .subcommand(Command::new("help"))
-        .subcommand(leaf("init"))
-        .subcommand(leaf("create"))
-        .subcommand(leaf("branch"))
-        .subcommand(parent("apps", &["list", "get"]))
-        .subcommand(parent("conversations", &["list", "get"]))
-        .subcommand(parent("deployments", &["list", "create", "promote"]))
-        .subcommand(parent("local", &["create"]))
-        .subcommand(parent("versions", &["list", "compare"]))
-        .subcommand(leaf("insights"))
-        .subcommand(leaf("agent"))
-        .subcommand(leaf("tool"))
-        .subcommand(leaf("guardrail"))
+        .subcommand(dir_cmd("init"))
+        .subcommand(create_cmd())
+        .subcommand(branch_cmd())
+        .subcommand(apps_cmd())
+        .subcommand(conversations_cmd())
+        .subcommand(deployments_cmd())
+        .subcommand(parent_dir("local", "create"))
+        .subcommand(versions_cmd())
+        .subcommand(located("insights"))
+        .subcommand(dir_cmd("agent"))
+        .subcommand(dir_cmd("tool"))
+        .subcommand(dir_cmd("guardrail"))
+}
+
+fn loc_args() -> [Arg; 2] {
+    [
+        Arg::new("location").long("location").num_args(1),
+        Arg::new("project-id").long("project-id").num_args(1),
+    ]
 }
 
 fn leaf(name: &'static str) -> Command {
     Command::new(name)
 }
 
-fn parent(name: &'static str, children: &[&'static str]) -> Command {
-    let mut cmd = Command::new(name).subcommand_required(false);
-    for child in children {
-        cmd = cmd.subcommand(Command::new(*child));
-    }
-    cmd
+fn located(name: &'static str) -> Command {
+    Command::new(name).args(loc_args())
+}
+
+fn dir_cmd(name: &'static str) -> Command {
+    Command::new(name)
+        .arg(Arg::new("app-dir").long("app-dir").num_args(1))
+        .args(loc_args())
+}
+
+fn file_cmd(name: &'static str, file_flag: &'static str) -> Command {
+    Command::new(name)
+        .arg(Arg::new(file_flag).long(file_flag).num_args(1))
+        .arg(Arg::new("app-name").long("app-name").num_args(1))
+        .args(loc_args())
+}
+
+fn eval_file_cmd(name: &'static str, file_flag: &'static str) -> Command {
+    Command::new(name)
+        .arg(Arg::new(file_flag).long(file_flag).num_args(1))
+        .arg(Arg::new("app-name").long("app-name").num_args(1))
+        .arg(Arg::new("output").long("output").num_args(1))
+        .args(loc_args())
+}
+
+fn ci_cmd(name: &'static str) -> Command {
+    Command::new(name)
+        .arg(Arg::new("app-dir").long("app-dir").num_args(1))
+        .arg(Arg::new("display-name").long("display-name").num_args(1))
+        .args(loc_args())
+}
+
+fn create_cmd() -> Command {
+    Command::new("create")
+        .arg(Arg::new("name").long("name").num_args(1))
+        .arg(Arg::new("app-id").long("app-id").num_args(1))
+        .args(loc_args())
+}
+
+fn delete_cmd() -> Command {
+    Command::new("delete")
+        .arg(Arg::new("app").long("app").num_args(1))
+        .arg(Arg::new("app-name").long("app-name").num_args(1))
+        .arg(Arg::new("display-name").long("display-name").num_args(1))
+        .args(loc_args())
+}
+
+fn branch_cmd() -> Command {
+    Command::new("branch")
+        .arg(Arg::new("source").long("source").num_args(1))
+        .arg(Arg::new("new-name").long("new-name").num_args(1))
+        .args(loc_args())
+}
+
+fn apps_cmd() -> Command {
+    Command::new("apps")
+        .subcommand(
+            Command::new("list")
+                .args(loc_args())
+                .arg(Arg::new("app").long("app").num_args(1)),
+        )
+        .subcommand(
+            Command::new("get")
+                .args(loc_args())
+                .arg(Arg::new("app").long("app").num_args(1)),
+        )
+}
+
+fn conversations_cmd() -> Command {
+    Command::new("conversations")
+        .subcommand(
+            Command::new("list")
+                .args(loc_args())
+                .arg(Arg::new("app-name").long("app-name").num_args(1)),
+        )
+        .subcommand(
+            Command::new("get")
+                .args(loc_args())
+                .arg(
+                    Arg::new("conversation-resource-name")
+                        .long("conversation-resource-name")
+                        .num_args(1),
+                ),
+        )
+}
+
+fn deployments_cmd() -> Command {
+    let common = || {
+        [
+            Arg::new("app-name").long("app-name").num_args(1),
+            Arg::new("deployment-id").long("deployment-id").num_args(1),
+            Arg::new("version").long("version").num_args(1),
+            Arg::new("channel-type").long("channel-type").num_args(1),
+        ]
+    };
+    Command::new("deployments")
+        .subcommand(Command::new("list").args(loc_args()).args(common()))
+        .subcommand(Command::new("create").args(loc_args()).args(common()))
+        .subcommand(Command::new("promote").args(loc_args()).args(common()))
+}
+
+fn versions_cmd() -> Command {
+    Command::new("versions")
+        .subcommand(
+            Command::new("list")
+                .args(loc_args())
+                .arg(Arg::new("app").long("app").num_args(1)),
+        )
+        .subcommand(
+            Command::new("compare")
+                .args(loc_args())
+                .arg(Arg::new("app").long("app").num_args(1)),
+        )
+}
+
+fn parent_dir(name: &'static str, child: &'static str) -> Command {
+    Command::new(name).subcommand(dir_cmd(child))
 }
 
 fn migrate_cmd() -> Command {
@@ -108,14 +226,16 @@ fn run_cmd() -> Command {
     Command::new("run")
         .arg(Arg::new("wait").long("wait").action(ArgAction::SetTrue))
         .arg(Arg::new("app-dir").long("app-dir").num_args(1))
-        .arg(Arg::new("location").long("location").num_args(1))
+        .arg(Arg::new("app-name").long("app-name").num_args(1))
+        .arg(Arg::new("evaluation-id").long("evaluation-id").num_args(1))
+        .args(loc_args())
 }
 
 fn push_cmd() -> Command {
     Command::new("push")
         .arg(Arg::new("app-dir").long("app-dir").num_args(1))
         .arg(Arg::new("app").long("app").num_args(1))
-        .arg(Arg::new("location").long("location").num_args(1))
+        .args(loc_args())
 }
 
 fn lint_cmd() -> Command {

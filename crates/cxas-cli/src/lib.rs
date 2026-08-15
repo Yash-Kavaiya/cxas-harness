@@ -13,6 +13,7 @@
 // limitations under the License.
 
 mod args;
+mod catalog;
 mod commands;
 mod output;
 mod transport;

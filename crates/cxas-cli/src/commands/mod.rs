@@ -19,6 +19,7 @@ pub mod evals;
 pub mod lint;
 pub mod migrate;
 pub mod pull;
+pub mod resources;
 pub mod state;
 pub mod trace;
 
@@ -66,13 +67,12 @@ pub fn dispatch(matches: &ArgMatches, out: &mut impl Write) -> i32 {
         Some(("run-session", _)) => run_session(format, out),
         Some(("llm-lint", sub)) => llm_lint(sub, format, out),
         Some(("help", _)) => write_ok_help(format, out),
-        Some((name, sub)) => {
-            let command = match sub.subcommand() {
-                Some((child, _)) => format!("{name} {child}"),
-                None => name.to_string(),
-            };
-            not_implemented(out, format, &command)
-        }
+        Some((name, sub)) => match sub.subcommand() {
+            Some((child, child_m)) => {
+                resources::dispatch(&format!("{name} {child}"), child_m, format, out)
+            }
+            None => resources::dispatch(name, sub, format, out),
+        },
         None => write_err(
             out,
             format,

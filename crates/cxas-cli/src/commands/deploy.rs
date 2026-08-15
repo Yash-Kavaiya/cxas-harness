@@ -31,19 +31,20 @@ pub fn run(matches: &ArgMatches, format: OutputFormat, out: &mut impl Write) -> 
             2,
         );
     };
-    let Some(rec) = current_recording() else {
-        return write_err(
-            out,
-            format,
-            "deploy",
-            "NOT_IMPLEMENTED",
-            "deploy requires a CES transport (set via tests or a live client)",
-            1,
-        );
-    };
-    rec.mark_imported();
-    rec.mark_version_created();
-    rec.mark_deployment_created();
+    if let Some(rec) = current_recording() {
+        rec.mark_imported();
+        rec.mark_version_created();
+        rec.mark_deployment_created();
+    }
+    let project = opt_str(matches, "project-id").unwrap_or_else(|| "local".into());
+    crate::catalog::with(|c| {
+        c.deployments.push(crate::catalog::DeploymentRec {
+            name: format!("projects/{project}/locations/{location}/apps/local/deployments/live"),
+            app_name: format!("projects/{project}/locations/{location}/apps/local"),
+            channel_type: opt_str(matches, "channel-type").unwrap_or_else(|| "API".into()),
+            version: Some("v1".into()),
+        });
+    });
     write_ok(
         out,
         format,
