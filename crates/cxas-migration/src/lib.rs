@@ -15,12 +15,14 @@
 mod error;
 mod hillclimb;
 mod snapshot;
+mod tool_sync;
 
 pub use error::{LifeError, MigrateError};
 pub use hillclimb::HillclimbRun;
 pub use snapshot::{
     take_failed_deletes, CleanupQueue, SnapshotApi, SnapshotGuard, SnapshotName,
 };
+pub use tool_sync::{SyncReport, ToolSync};
 
 pub fn crate_name() -> &'static str {
     "cxas-migration"
