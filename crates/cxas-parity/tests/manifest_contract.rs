@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use cxas_parity::{load_bundled, ParityError};
+use cxas_parity::{load_bundled, ParityError, ParityManifest};
 
 #[test]
 fn bundled_manifest_loads_and_has_version_1() {
@@ -74,42 +74,162 @@ fn every_frozen_python_class_is_present() {
     }
 }
 
+const REQUIRED_METHODS: &[(&str, &[&str])] = &[
+    (
+        "Apps",
+        &[
+            "list_apps",
+            "get_app",
+            "get_app_by_display_name",
+            "create_app",
+            "delete_app",
+            "export_app",
+            "import_app",
+            "import_as_new_app",
+            "get_apps_map",
+        ],
+    ),
+    (
+        "Agents",
+        &[
+            "get_agents_map",
+            "list_agents",
+            "get_agent",
+            "create_agent",
+            "update_agent",
+            "delete_agent",
+        ],
+    ),
+    (
+        "Tools",
+        &[
+            "get_tools_map",
+            "list_tools",
+            "get_tool",
+            "create_tool",
+            "update_tool",
+            "delete_tool",
+        ],
+    ),
+    (
+        "Guardrails",
+        &[
+            "list_guardrails",
+            "get_guardrail",
+            "create_guardrail",
+            "update_guardrail",
+            "delete_guardrail",
+        ],
+    ),
+    (
+        "Deployments",
+        &[
+            "list_deployments",
+            "get_deployment",
+            "create_deployment",
+            "update_deployment",
+            "delete_deployment",
+        ],
+    ),
+    (
+        "Sessions",
+        &["create_session_id", "run", "parse_result", "bidi_run"],
+    ),
+    (
+        "Evaluations",
+        &[
+            "list_evaluations",
+            "get_evaluation",
+            "update_evaluation",
+            "run_evaluation",
+            "export_evaluation",
+            "get_evaluation_result",
+            "wait_for_run_and_get_results",
+            "get_evaluations_map",
+        ],
+    ),
+    ("SimulationEvals", &["run_simulations"]),
+    (
+        "Versions",
+        &[
+            "list_versions",
+            "create_version",
+            "compare_versions",
+            "get_version",
+        ],
+    ),
+];
+
 #[test]
-fn apps_sessions_evaluations_have_required_methods() {
+fn spec_method_minima_are_present() {
     let m = load_bundled().unwrap();
-    let apps = m.require_type("Apps").unwrap();
-    for name in [
-        "list_apps",
-        "get_app",
-        "export_app",
-        "import_app",
-        "import_as_new_app",
-    ] {
-        assert!(apps.methods.iter().any(|mm| mm.name == name), "{name}");
+    for (class, methods) in REQUIRED_METHODS {
+        let ty = m
+            .require_type(class)
+            .unwrap_or_else(|_| panic!("missing class {class}"));
+        for name in *methods {
+            assert!(
+                ty.methods.iter().any(|mm| mm.name == *name),
+                "{class} missing method {name}"
+            );
+        }
     }
-    let evals = m.require_type("Evaluations").unwrap();
-    assert!(evals
-        .methods
-        .iter()
-        .any(|mm| mm.name == "wait_for_run_and_get_results"));
 }
+
+const REQUIRED_CLI: &[&[&str]] = &[
+    &["migrate", "dfcx"],
+    &["init-github-action"],
+    &["evals", "report"],
+    &["test-tools"],
+    &["test-callbacks"],
+    &["test-single-callback"],
+    &["export"],
+    &["push-eval"],
+    &["run"],
+    &["run-session"],
+    &["ci-test"],
+    &["local-test"],
+    &["delete"],
+    &["pull"],
+    &["push"],
+    &["lint"],
+    &["llm-lint"],
+    &["help"],
+    &["init"],
+    &["create"],
+    &["branch"],
+    &["apps", "list"],
+    &["apps", "get"],
+    &["conversations", "list"],
+    &["conversations", "get"],
+    &["deployments", "list"],
+    &["deployments", "create"],
+    &["deployments", "promote"],
+    &["local", "create"],
+    &["versions", "list"],
+    &["versions", "compare"],
+    &["insights"],
+    &["trace"],
+    &["agent"],
+    &["tool"],
+    &["guardrail"],
+];
 
 #[test]
 fn frozen_cli_commands_are_present() {
     let m = load_bundled().unwrap();
-    for argv in [
-        &["pull"][..],
-        &["push"],
-        &["lint"],
-        &["llm-lint"],
-        &["evals", "report"],
-        &["migrate", "dfcx"],
-        &["trace"],
-        &["init-github-action"],
-    ] {
+    for argv in REQUIRED_CLI {
         m.require_command(argv)
             .unwrap_or_else(|_| panic!("missing {argv:?}"));
     }
+}
+
+#[test]
+fn json_round_trip_equals_bundled() {
+    let original = load_bundled().expect("bundled YAML must parse");
+    let json = original.to_json().expect("to_json");
+    let parsed: ParityManifest = serde_json::from_str(&json).expect("JSON must parse");
+    assert_eq!(original, parsed);
 }
 
 #[test]

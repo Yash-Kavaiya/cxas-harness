@@ -15,7 +15,7 @@
 use cxas_proto::EvaluationRunState;
 
 #[test]
-fn unknown_wire_value_is_typed_not_a_panic() {
+fn evaluation_run_state_unknown_variant_is_typed() {
     let state = EvaluationRunState::from_wire(99);
     assert_eq!(state, EvaluationRunState::Unknown(99));
     assert_eq!(state.as_str_name(), "UNKNOWN(99)");
