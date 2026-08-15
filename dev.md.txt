@@ -1,0 +1,132 @@
+## Overview
+
+`cxas-scrapi` is Google Cloud Platform's open-source Python SDK, CLI, and Agent Skills toolkit for building, evaluating, and deploying Conversational Agents on CX Agent Studio (CES), the successor to Dialogflow CX. The repository is organized around a `core` module (Apps, Agents, Tools, Guardrails, Deployments, Sessions), a `utils` module (pagination, proto conversion, Sheets/BigQuery integrations), an `evals` module (golden tests, simulations, latency metrics), a `cli` module exposing the `cxas` command (including `cxas lint` and `cxas llm-lint`), and a `migration` module for legacy Dialogflow CX → CXAS conversion. It integrates with agentic IDEs including Gemini CLI, Claude Code, and MCP-based tooling. `pyproject.toml` confirms Python 3.10–3.14 support and a dependency surface of over 30 packages, including `google-cloud-ces`, `google-genai`, `pandas`, `gspread`, `pydub`, `InquirerPy`, and `scikit-learn`.[1][2][3][4]
+
+This report catalogs the 25 documented open issues in the `GoogleCloudPlatform/cxas-scrapi` tracker as of August 2026, derives concrete limitation classes from them, and lays out a phased plan to build a Rust reimplementation — `cxas-harness` — using the "Gauntlet Loop" AI-agent development methodology popularized by Matt Shumer in mid-2026.[5][6]
+
+## Limitations of the Existing Python Harness
+
+Grouping the repository's 25 open issues by theme surfaces four categories of weakness: correctness bugs in evaluation and simulation, regulatory/scaling constraints, CLI and automation friction, and architectural rigidity from packaging choices.
+
+### Correctness and reliability bugs
+
+| Issue | Problem | Root cause category |
+|---|---|---|
+| #355 | Simulation evals repeat the first `static_utterance` instead of advancing | State-machine bug in eval loop |
+| #345 | DTMF simulations hang because `BidiSessionHandler` never waits for the agent's turn | Async/bidi-streaming concurrency bug |
+| #284 | `wait_for_run_and_get_results` crashes with `'int' object has no attribute 'name'` when the server returns an `EvaluationRunState` the installed protobuf stubs don't define | Weak typing / stub drift between generated protobufs and server enums |
+| #298 | Apps 4MB or larger cannot be pulled | Payload/streaming size limits not handled |
+| #394 | Tool deletion in Cloud isn't 100% reflected locally | Local/remote state sync gap |
+| #136 | Voice channel simulations don't evaluate the returned audio | Incomplete multimodal eval coverage |
+| #168 | Automated hillclimbing leaves behind entire agent snapshots | Resource cleanup / lifecycle bug |
+| #86 | Missing root-agent validation in `cxas lint` causes failed pushes | Incomplete static validation coverage |
+
+All eight issues above are confirmed live in the repository's open-issue list, each carrying a `bug` label except #86, which is filed as a bug report despite lacking the formal label. The `'int' object has no attribute 'name'` failure (#284) is emblematic of a class of failures common in dynamically typed Python SDKs wrapping gRPC/protobuf services: enum values returned by the server can silently diverge from what's compiled into the installed client stubs, and Python's duck typing lets this pass unnoticed until runtime. A statically typed language with exhaustive `match` semantics over enums would surface this at compile time rather than during a live evaluation run.
+
+### Regulatory, quota, and scaling constraints
+
+Issue #401 is explicitly labeled "Blocker": `vertex_location` is hardcoded to `"global"` inside the evaluations module, which prevents any usage in regulated industries requiring regional data residency. Issue #263 requests that evals use a dedicated `Evaluation RunSession` quota instead of piggybacking on the general `RunSession` quota, implying the current design causes quota contention between normal agent operation and evaluation workloads. Issue #270 ("Unified Workspace Resolution & Cascading Profiles") and #131 (an RFC for `cxas diff`/`cxas state` drift-attribution primitives) both point to the absence of a coherent state/configuration model — teams working across the GUI and an IDE currently have no reliable way to detect or resolve configuration drift.
+
+### CLI ergonomics and automation friction
+
+Issue #55, "Improve cxas CLI ergonomics for coding agents and automation," is a direct signal that the CLI's current output formats and invocation patterns are not well suited to being driven by other automated agents or CI pipelines. Related issues #54 (multi-environment GitHub Actions generation via `environment.json`) and #46 ("Create Formal Github Actions") show that first-class CI/CD integration is still missing, forcing teams to hand-roll automation around the CLI. Issue #350 asks that `cxas trace` include per-turn raw JSON, indicating current tracing output is too lossy for deep debugging.
+
+### Architectural and dependency weight
+
+The dependency list in `pyproject.toml` spans roughly 30 runtime packages, bundling heavyweight, loosely related libraries — `scikit-learn`, `pandas-gbq`, `google-cloud-bigquery`, `gspread`, `pydub`, `graphviz` — into a single monolithic install rather than splitting them into optional extras beyond the existing `dev` and `docs` groups. A minimal CLI or lint use case still pulls in machine-learning and audio-processing dependencies, inflating install size, cold-start time, and attack surface — a recognized Python packaging anti-pattern that a modular Rust crate workspace avoids by design. Notably, the project's own maintainers flag `InquirerPy` as "imported lazily" specifically so callers who don't need the interactive TUI for `cxas migrate dfcx` avoid its cost — a comment embedded directly in `pyproject.toml` that is itself an admission of the packaging problem. Distributing "Agent Skills" as raw filesystem directories (`.agents`, `.claude`, `.gemini`) copied via `hatch.build.targets.wheel.shared-data` is also fragile from a versioning standpoint compared with a compiled, versioned binary artifact.
+
+### Summary of limitation classes
+
+| Category | Representative issues | Underlying weakness |
+|---|---|---|
+| Correctness/concurrency bugs | #355, #345, #284, #394, #136, #168, #86 | Dynamic typing, weak state machines, incomplete async handling |
+| Regional/regulatory blockers | #401, #263 | Hardcoded config, single quota pool |
+| Config/state coherence | #270, #131 | No unified, verifiable state model |
+| CLI/automation ergonomics | #55, #54, #46, #350 | Human-first CLI design, no machine-readable contract |
+| Packaging/performance | Dependency graph in `pyproject.toml` | Monolithic Python package, no compile-time guarantees |
+
+## Design Goals for cxas-harness (Rust)
+
+Given these limitations, the Rust rewrite should optimize for compile-time correctness over protobuf/enum drift, first-class async/bidi-streaming safety, regional configurability as a core primitive rather than a hardcoded default, a machine-first CLI (structured JSON output, stable exit codes, non-interactive mode by default), and a modular crate workspace so consumers only pull in what they need — for example `cxas-core`, `cxas-evals`, `cxas-cli`, and `cxas-migration` as independent crates rather than one monolith.
+
+## Full Development Plan
+
+### Phase 0 — Foundations and parity contract
+
+Before writing any Rust, establish a "parity contract": enumerate every public class and method in `cxas_scrapi.core`, `evals`, `cli`, and `migration`, plus every documented CLI subcommand exposed via the `cxas` entry point, turning the existing Python surface into a machine-readable spec (a YAML or JSON API manifest). This spec becomes the acceptance criteria for the Gauntlet Loop's critics in later phases. Also vendor the CES protobuf definitions referenced by `google-cloud-ces` and generate Rust bindings via `tonic`/`prost`, so the enum-drift bug class (#284) is closed by construction — the compiler rejects unmatched enum variants rather than surfacing the failure at runtime.
+
+### Phase 1 — Crate architecture
+
+Structure the workspace to mirror and improve on the Python library's module composition:[1]
+
+- `cxas-proto`: generated gRPC/protobuf bindings for CES, kept in lockstep with the SDK version via CI checks, directly targeting the stub-drift bug (#284).
+- `cxas-core`: Apps, Agents, Tools, Guardrails, Deployments, Sessions — pure async Rust built on `tokio` and `tonic`, with `location` as a mandatory typed field that can never silently default to `"global"`, resolving #401.
+- `cxas-utils`: pagination, response flattening, Sheets/BigQuery adapters — feature-flagged so they compile only when explicitly requested, addressing the packaging bloat visible in the current dependency list.
+- `cxas-evals`: golden tests, simulation runs, latency metrics, with an explicit typed state machine for simulation turn progression (fixing the "repeats first static_utterance" bug, #355) and a dedicated quota-aware client for evaluation `RunSession`s (#263).
+- `cxas-migration`: Dialogflow CX → CXAS conversion tooling, non-interactive by default with an optional TUI behind a feature flag — mirroring the lazy-`InquirerPy` pattern but making it structural rather than an afterthought.
+- `cxas-cli`: the `cxas` binary, emitting structured JSON alongside human-readable output, explicitly designed for coding-agent consumption (answering #55), plus native GitHub Actions template generation as a first-class subcommand (#54, #46).
+- `cxas-state`: a new crate with no Python equivalent, implementing content-addressed hashing of agent configuration for `cxas diff`/`cxas state` drift detection, resolving #131 and #270.
+
+### Phase 2 — Bidi-streaming and concurrency correctness
+
+Rebuild the DTMF/voice session handler using `tokio::select!` with explicit turn-state enums (`AwaitingUserTurn`, `AwaitingAgentTurn`, `Terminated`) instead of implicit boolean flags, closing #345. The underlying CES API exposes both a unary `runSession` and a bidirectional `BidiRunSession` streaming method for real-time turns, and the Rust handler should model that bidirectional protocol as a proper async state machine rather than relying on ad hoc waiting logic. Extend the audio evaluation path to score returned TTS/audio output against expected transcripts using a pluggable scorer trait, closing #136 and unblocking issue #27 ("Audio Evaluations").[7]
+
+### Phase 3 — Lint and validation engine
+
+Port `cxas lint`'s structural and schema checks as a rule-registry pattern in Rust, where each rule is a `trait LintRule` implementation with its own unit tests, ensuring the missing root-agent validation gap (#86) and any future gaps are caught by a completeness test that diffs the rule registry against the schema's required fields. Port `cxas llm-lint` as a thin client calling Gemini through a Rust HTTP client equivalent to `google-genai`, preserving the AI-driven semantic review capability the Python tool currently provides.
+
+### Phase 4 — Migration and eval-run cleanup
+
+Implement resource-lifecycle guards — RAII-style `Drop` handlers — around agent snapshots created during automated hillclimbing, so that even on panic or task cancellation, orphaned snapshots are cleaned up, directly resolving #168. Ensure tool-deletion sync between local and cloud state is verified through the new `cxas-state` hashing layer, resolving #394.
+
+### Phase 5 — Packaging, docs, and release
+
+Publish `cxas-harness` as a single statically linked binary per platform (via `cargo dist` or `cross`), eliminating the Python `uv sync`/virtualenv setup step entirely. Port the MkDocs Material documentation site referenced in the Python project's docs extras to `mdBook` or a comparable Rust-ecosystem generator, preserving the Docs/Examples/Agent Skills/Core SDK link structure. Add native GitHub Actions workflow generation as a `cxas actions init` subcommand, closing #54 and #46.
+
+## Applying the Gauntlet Loop
+
+The Gauntlet Loop is an AI-agent-driven iterative build methodology, credited to Matt Shumer and widely discussed from July 2026 onward, in which a lead/orchestrator agent decomposes a goal into independently improvable pieces, assigns each piece to a specialist builder sub-agent, and pairs every builder with a separate, context-blind critic sub-agent that judges the finished output against a concrete quality reference. Failed pieces go back for another build-critique cycle, and the loop has no fixed endpoint — only a quality bar and budget or iteration caps as stop conditions. Three structural features distinguish it from a simple single-builder/single-critic loop: work fans out to many specialist sub-agents in parallel, every sub-agent has its own dedicated critic rather than one shared critic for the whole project, and the critic is "blind" — it inspects only finished evidence such as test output or benchmark comparisons, unlabeled and in random order, and is forced to pick a winner, which prevents it from being swayed by the builder's explanations.[8][6][5]
+
+Shumer's own playbook breaks the method into seven components: use an agentic harness with real tool access and sub-agent support (chat interfaces alone cannot run this loop); define the goal rather than the implementation and let the model choose the architecture; establish a real, inspectable quality bar rather than a vague instruction; split the goal into independently improvable pieces, with the agent doing the decomposition; strictly separate builder and critic roles; loop continuously without an artificial round cap; and monitor the process transparently through a live status view of candidate versus reference and each verdict. A parallel practitioner write-up describes the same structure as a lead agent that segments a challenging objective into manageable parts, assigns builder agents to create them, and has various critics — armed with fresh context — assess the results, sending work back to the most significant gap if the reference still outperforms it.[6][5]
+
+### Step 1 — Set the goal, not the implementation
+
+Give the orchestrator agent the target outcome — rewrite `cxas-scrapi` as a correctness- and ergonomics-improved Rust harness, `cxas-harness` — without prescribing exact code structure, consistent with the Gauntlet Loop principle of stating "what you want" and letting the model pick the architecture. The Phase 0 parity-contract manifest, together with the limitation table above, becomes the task input the orchestrator works from.[6]
+
+### Step 2 — Establish the real-world quality benchmark
+
+Practitioner accounts emphasize that critics are only as sharp as the reference they compare against, and that a load-bearing, inspectable benchmark is essential. For `cxas-harness`, the benchmark is dual-sided and concrete: full behavioral parity against the existing Python `cxas-scrapi` test suite and documented CLI outputs, plus a "bug closure" checklist derived directly from the 25 open GitHub issues cataloged above, where each closed issue is a pass/fail gate rather than a subjective judgment. This mirrors the pattern of comparing against a real game or a real screenshot instead of a vague "make it good" instruction.[9][6]
+
+### Step 3 — Fan out builder sub-agents by crate
+
+Split the work along the Phase 1 crate boundaries: one builder sub-agent per crate (`cxas-proto`, `cxas-core`, `cxas-utils`, `cxas-evals`, `cxas-migration`, `cxas-cli`, `cxas-state`). This matches the Gauntlet Loop pattern of assigning each independently improvable piece — analogous to lighting, physics, or sound systems in the game-building examples that popularized the method — to its own specialist builder working in parallel rather than one agent juggling the entire codebase. Each builder should work in an isolated git worktree or feature branch and commit before requesting critique, so that failures are isolated and the orchestrator can merge only what passes.[8][6]
+
+### Step 4 — Pair each builder with a blind critic
+
+Every builder crate gets a dedicated critic sub-agent that never sees the builder's source code or rationale — only the evidence: `cargo test` output, `cargo clippy` lint results, a diff against the parity manifest, and a reproduction of the specific GitHub issue's bug scenario. For the critic reviewing `cxas-evals`, the evidence is simply "does simulation now advance past the first static_utterance," directly testing #355. Consistent with the described critic role, it should score the submission unlabeled and in random order against the reference, identify the single biggest remaining gap, and return that as the next prompt to the builder — never lowering the bar or narrowing scope.[6]
+
+### Step 5 — Loop until the gauntlet is survived
+
+Each builder/critic pair iterates — build, run tests, get scored, receive the top-priority fix, rebuild — until that piece's critic is satisfied the crate provides full functionality, has test coverage for every flow including edge cases (explicitly, unit tests reproducing each of the eight correctness bugs listed above), contains no dead code or duplicate logic, and introduces no new regressions or security issues. Because the method runs "continuously" with no artificial round cap by design, a crate is not declared done until it survives every check individually: the parity check, the clippy/lint pass, the reproduction test for its assigned GitHub issue(s), and a performance or binary-size check against the Phase 5 packaging goals.[6]
+
+### Step 6 — Orchestrator-only merge authority
+
+The lead/orchestrator agent's role is purely to plan, fan out, and merge — it never implements and never critiques, preserving the strict separation of builder and critic roles the method's playbook treats as essential. Only after a crate's critic declares success does the orchestrator merge that feature branch into the main integration branch; cross-crate integration, such as `cxas-cli` calling into `cxas-core` and `cxas-evals`, becomes its own subsequent gauntlet round with its own critic focused purely on end-to-end CLI behavior against the original Python CLI's documented commands.[6]
+
+### Step 7 — No fixed finish line, explicit stop conditions
+
+The Gauntlet Loop's own description states the loop runs until deliberately stopped rather than terminating on its own. Practical stop conditions for this project should still be made explicit to avoid runaway iteration: a per-crate iteration cap, a total compute/time budget for the whole rewrite, and a final "release candidate" gate requiring 100% of the 25 cataloged issues to have a corresponding closing test, before the orchestrator hands the result back for human review — mirroring the "monitor transparently" component of the published playbook.[6]
+
+## Roadmap Summary
+
+| Phase | Deliverable | Issues/limitations addressed |
+|---|---|---|
+| 0 | Parity manifest, vendored protobufs | #284 (enum drift) |
+| 1 | Crate workspace skeleton | Packaging bloat, #270, #131 |
+| 2 | Bidi-streaming session handler, audio eval scorer | #345, #136, #27 |
+| 3 | Lint rule registry, llm-lint client | #86 |
+| 4 | Snapshot RAII cleanup, state-hash sync | #168, #394 |
+| 5 | Static binary release, docs, CI templates | #55, #54, #46, #350 |
+| Gauntlet Loop overlay | Per-crate builder/critic pairs, parity + issue-closure benchmark | All 25 open issues used as pass/fail gates |
+
+This plan treats the Python project's own issue tracker as ground truth for what "better" means for a rewrite, then applies the Gauntlet Loop's builder/blind-critic/no-self-grading structure — decomposition by the agent, a real inspectable benchmark, strict role separation, and continuous iteration without artificial caps — to drive the Rust rewrite toward objectively verifiable parity and bug closure rather than subjective code review.[6]
