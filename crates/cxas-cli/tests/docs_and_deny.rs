@@ -12,8 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-fn main() {
-    let argv: Vec<String> = std::env::args().collect();
-    let code = cxas_cli::run(&argv, &mut std::io::stdout());
-    std::process::exit(code);
+#[test]
+fn mdbook_summary_has_required_sections() {
+    let summary = include_str!("../../../book/src/SUMMARY.md");
+    for needle in ["Docs", "Examples", "Agent Skills", "Core SDK"] {
+        assert!(summary.contains(needle), "SUMMARY.md missing {needle}");
+    }
+}
+
+#[test]
+fn deny_toml_has_licenses_and_advisories() {
+    let text = include_str!("../../../deny.toml");
+    assert!(text.contains("[licenses]"));
+    assert!(text.contains("[advisories]"));
 }

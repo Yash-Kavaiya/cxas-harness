@@ -12,8 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-fn main() {
-    let argv: Vec<String> = std::env::args().collect();
-    let code = cxas_cli::run(&argv, &mut std::io::stdout());
-    std::process::exit(code);
+#[test]
+fn every_parity_command_is_a_clap_subcommand() {
+    let manifest = cxas_parity::load_bundled().unwrap();
+    let parser = cxas_cli::build_parser();
+    for cmd in manifest.commands_for_crate("cxas-cli") {
+        let mut current = &parser;
+        for (i, part) in cmd.argv.iter().enumerate() {
+            current = current
+                .find_subcommand(part)
+                .unwrap_or_else(|| panic!("missing clap path {:?} at {part}", cmd.argv));
+            if i + 1 == cmd.argv.len() {
+                break;
+            }
+        }
+    }
 }

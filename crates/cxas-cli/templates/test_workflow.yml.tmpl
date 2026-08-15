@@ -1,0 +1,12 @@
+on: [pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        environment: [{{ENVIRONMENTS}}]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cxas lint --app-dir . --format json
+      - run: cxas run --wait --format json
+        env:
+          CXAS_ENVIRONMENT: ${{ matrix.environment }}

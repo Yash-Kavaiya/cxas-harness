@@ -1,0 +1,5 @@
+[book]
+title = "cxas-harness"
+authors = ["The cxas-harness Authors"]
+language = "en"
+src = "src"
