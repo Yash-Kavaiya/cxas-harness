@@ -261,6 +261,8 @@ name = "cxas-cli"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
+ "async-trait",
+ "bytes",
  "clap",
  "cxas-core",
  "cxas-evals",
@@ -268,6 +270,7 @@ dependencies = [
  "cxas-migration",
  "cxas-parity",
  "cxas-state",
+ "futures",
  "predicates",
  "serde",
  "serde_json",
