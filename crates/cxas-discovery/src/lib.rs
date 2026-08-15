@@ -17,6 +17,17 @@
 //! No network, no code generation, no CES semantics. This crate is the single
 //! definition of "what the API is"; the parity tests and the Gauntlet evidence
 //! collector both query through it so they cannot drift from one another.
+//!
+//! Because it is the only lens onto the reference, anything it cannot see is
+//! unverifiable everywhere else. CES declares enum values in three places, and
+//! all three are surfaced:
+//!
+//! - `schemas.<S>.properties.<p>.enum` -- a scalar enum property
+//! - `schemas.<S>.properties.<p>.items.enum` -- a repeated enum property
+//! - `resources..methods.<m>.parameters.<p>.enum` -- an enum query parameter
+//!
+//! The first two are [`EnumField`]; the third is [`ParameterEnum`], kept apart
+//! because a query parameter has no schema behind it to key on.
 
 mod model;
 mod parse;
