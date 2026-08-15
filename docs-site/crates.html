@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body data-page="crates.html">
-<template id="page">
+<article class="page" id="content">
   <p class="kicker">Product</p>
   <h1>Crate SDK</h1>
   <p class="lead">The <code>cxas</code> binary is a thin dispatcher. Library crates own types, rules, and tests. Depend on the crate that owns the behavior you need.</p>
@@ -22,17 +22,17 @@
   <p><code>EvaluationRunState</code> with variants <code>Unspecified</code>, <code>Pending</code>, <code>Running</code>, <code>Succeeded</code>, <code>Failed</code>, <code>Cancelled</code>, and <code>Unknown(i32)</code>.</p>
   <ul>
     <li><code>from_wire(i32)</code> never panics on a new CES value</li>
-    <li><code>as_str_name()</code> returns <code>UNKNOWN(n)</code> for unknown integers — it does not call <code>.name</code> on a raw int (#284)</li>
+    <li><code>as_str_name()</code> returns <code>UNKNOWN(n)</code> for unknown integers â€” it does not call <code>.name</code> on a raw int (#284)</li>
     <li><code>build.rs</code> generates from <code>proto/ces/evaluation_run_state.proto</code> when <code>protoc</code> is present; otherwise the hand-written wrapper is used</li>
   </ul>
 
   <h2>cxas-core</h2>
   <p>Public exports include:</p>
   <ul>
-    <li><code>Location</code> — mandatory newtype, no <code>Default</code></li>
-    <li><code>Apps</code>, <code>AppName</code> — list/get/create/delete/export (streamed <code>ExportHandle</code>, <code>--version-id</code>)</li>
-    <li><code>Deployments</code>, <code>Deployment</code>, <code>ChannelSettings</code> — noise cancellation and channel type (#403)</li>
-    <li><code>Evaluations</code>, <code>QuotaKind</code> — dedicated <code>RunSession</code> quota (#263)</li>
+    <li><code>Location</code> â€” mandatory newtype, no <code>Default</code></li>
+    <li><code>Apps</code>, <code>AppName</code> â€” list/get/create/delete/export (streamed <code>ExportHandle</code>, <code>--version-id</code>)</li>
+    <li><code>Deployments</code>, <code>Deployment</code>, <code>ChannelSettings</code> â€” noise cancellation and channel type (#403)</li>
+    <li><code>Evaluations</code>, <code>QuotaKind</code> â€” dedicated <code>RunSession</code> quota (#263)</li>
     <li><code>ClientConfig</code>, <code>Credentials</code></li>
     <li><code>CesTransport</code>, <code>NoopTransport</code>, <code>RecordingTransport</code></li>
   </ul>
@@ -45,16 +45,16 @@
 
   <h2>cxas-state</h2>
   <ul>
-    <li><code>hash_app_dir</code> / <code>StateHash</code> / <code>AppTree</code> — content-addressed tree</li>
-    <li><code>diff_trees</code> / <code>StateDiff</code> — <code>cxas diff</code> (#131)</li>
-    <li><code>resolve_workspace</code> — cascading profiles from <code>cxas.workspace.yaml</code> (#270)</li>
+    <li><code>hash_app_dir</code> / <code>StateHash</code> / <code>AppTree</code> â€” content-addressed tree</li>
+    <li><code>diff_trees</code> / <code>StateDiff</code> â€” <code>cxas diff</code> (#131)</li>
+    <li><code>resolve_workspace</code> â€” cascading profiles from <code>cxas.workspace.yaml</code> (#270)</li>
     <li>Errors include path escape, profile cycle, missing active profile, location required</li>
   </ul>
 
   <h2>cxas-evals</h2>
   <ul>
-    <li><code>TurnCursor</code> / <code>UserInput</code> — advances past the first <code>static_utterance</code> (#355)</li>
-    <li><code>BidiSession</code> / <code>CesBidi</code> — DTMF wait-or-timeout (#345)</li>
+    <li><code>TurnCursor</code> / <code>UserInput</code> â€” advances past the first <code>static_utterance</code> (#355)</li>
+    <li><code>BidiSession</code> / <code>CesBidi</code> â€” DTMF wait-or-timeout (#345)</li>
     <li><code>AudioScorer</code>, <code>SpeechPathScorer</code>, <code>HttpStt</code>, <code>require_audio</code> (#27, #136, #188)</li>
     <li><code>SimulationEvals</code>, <code>TurnEvals</code>, <code>ToolEvals</code>, <code>CallbackEvals</code>, <code>GuardrailEvals</code></li>
     <li><code>TurnRow</code> + combined HTML/JSON report (#206)</li>
@@ -63,22 +63,22 @@
   <h2>cxas-lint</h2>
   <ul>
     <li><code>RuleRegistry::builtin()</code></li>
-    <li>Named rules <code>V-ROOT</code>, <code>V-WELCOME</code>, <code>V-DEPVER</code>, schema rules, structural <code>V001</code>–<code>V009</code></li>
+    <li>Named rules <code>V-ROOT</code>, <code>V-WELCOME</code>, <code>V-DEPVER</code>, schema rules, structural <code>V001</code>â€“<code>V009</code></li>
     <li>Optional <code>LlmLintClient</code> behind the <code>llm</code> feature</li>
   </ul>
   <p>Full rule table: <a href="lint.html">Lint engine</a>.</p>
 
   <h2>cxas-migration</h2>
   <ul>
-    <li><code>SnapshotGuard</code> — deletes hillclimb snapshots on drop, panic, or cancel (#168)</li>
-    <li><code>ToolSync</code> — cloud tool deletion reflected locally via state hash (#394)</li>
-    <li><code>MigrationPipeline</code> — DFCX export → IR → CES app, non-interactive by default</li>
+    <li><code>SnapshotGuard</code> â€” deletes hillclimb snapshots on drop, panic, or cancel (#168)</li>
+    <li><code>ToolSync</code> â€” cloud tool deletion reflected locally via state hash (#394)</li>
+    <li><code>MigrationPipeline</code> â€” DFCX export â†’ IR â†’ CES app, non-interactive by default</li>
     <li>Optional <code>MigrationTui</code> behind <code>tui</code></li>
   </ul>
 
   <h2>cxas-cli</h2>
   <p>Clap parser in <code>args.rs</code>, dispatch in <code>commands/</code>, JSON writer in <code>output.rs</code>, catalog in <code>catalog.rs</code>. Integration tests live under <code>crates/cxas-cli/tests/</code>.</p>
-</template>
+</article>
 <script src="assets/site.js"></script>
 </body>
 </html>
