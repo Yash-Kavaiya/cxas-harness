@@ -12,17 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod context;
-mod diagnostic;
-mod error;
-mod registry;
-mod rules;
+pub mod root;
 
-pub use context::{discover, AgentDoc, DeploymentDoc, EvalDoc, LintContext, ToolDoc};
-pub use diagnostic::{Diagnostic, LintReport, Severity};
-pub use error::LintError;
-pub use registry::{LintRule, RuleRegistry, RuleScope};
+use crate::registry::LintRule;
 
-pub fn crate_name() -> &'static str {
-    "cxas-lint"
+pub fn builtin_rules() -> Vec<Box<dyn LintRule>> {
+    vec![Box::new(root::VRootRule)]
 }

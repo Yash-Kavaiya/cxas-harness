@@ -12,17 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-mod context;
-mod diagnostic;
-mod error;
-mod registry;
-mod rules;
+use thiserror::Error;
 
-pub use context::{discover, AgentDoc, DeploymentDoc, EvalDoc, LintContext, ToolDoc};
-pub use diagnostic::{Diagnostic, LintReport, Severity};
-pub use error::LintError;
-pub use registry::{LintRule, RuleRegistry, RuleScope};
-
-pub fn crate_name() -> &'static str {
-    "cxas-lint"
+#[derive(Debug, Error)]
+pub enum LintError {
+    #[error("io: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("unknown rule id {0}")]
+    UnknownRule(String),
+    #[error("missing API key in env {0}")]
+    MissingApiKey(&'static str),
+    #[error("model output was not JSON diagnostics")]
+    UnparseableModel,
+    #[error("gemini http {status}: {body}")]
+    Http { status: u16, body: String },
 }
