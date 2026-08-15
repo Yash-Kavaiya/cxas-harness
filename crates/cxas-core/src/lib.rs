@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod apps;
 mod config;
 mod error;
 mod location;
+mod transport;
 
+pub use apps::{AppName, Apps};
 pub use config::{ClientConfig, Credentials};
 pub use error::CoreError;
 pub use location::Location;
+pub use transport::{CesTransport, ExportHandle, ExportRequest};
