@@ -13,5 +13,7 @@
 // limitations under the License.
 
 fn main() {
-    println!("cxas-harness");
+    let argv: Vec<String> = std::env::args().collect();
+    let code = cxas_cli::run(&argv, &mut std::io::stdout());
+    std::process::exit(code);
 }
