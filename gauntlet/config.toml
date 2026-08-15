@@ -1,0 +1,42 @@
+# Gauntlet Loop configuration. Repo tooling -- never a Cargo workspace member.
+
+# Any agent CLI that reads a prompt on stdin and writes a response on stdout.
+# Examples: "claude -p", "gemini -p", "codex exec".
+agent_cmd = "claude -p"
+
+# Per-piece iteration cap. The loop has no natural finish line, so this and
+# budget_usd are the deliberate stop conditions.
+max_rounds = 8
+
+# 0 means unlimited.
+budget_usd = 0
+
+# Release-candidate gate: minimum implemented CES methods. Phase 3 raises this
+# to the gated subset (apps, agents, tools, v1beta evaluations), not all 170.
+rc_coverage_min = 0
+
+# Pieces map onto existing crate boundaries.
+pieces = [
+  "cxas-discovery",
+  "cxas-proto",
+  "cxas-core",
+  "cxas-utils",
+  "cxas-state",
+  "cxas-evals",
+  "cxas-lint",
+  "cxas-migration",
+  "cxas-cli",
+]
+
+# Every one of the 25 catalogued cxas-scrapi issues is assigned to exactly one
+# piece. Asserted by test_config_assigns_every_catalogued_issue_to_a_piece.
+[issues]
+cxas-discovery = []
+cxas-proto = ["284"]
+cxas-core = ["401", "298", "263", "403"]
+cxas-utils = ["256"]
+cxas-state = ["131", "270"]
+cxas-evals = ["355", "345", "136", "188", "27", "206"]
+cxas-lint = ["86", "397"]
+cxas-migration = ["168", "394"]
+cxas-cli = ["55", "46", "54", "350", "386", "252", "99"]
