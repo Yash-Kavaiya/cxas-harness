@@ -31,8 +31,10 @@
 
 mod model;
 mod parse;
+mod pin;
 
 pub use model::{Discovery, EnumField, Method, ParameterEnum};
+pub use pin::{Pinned, PinnedReference};
 
 /// Failure modes when loading a discovery document.
 #[derive(Debug, thiserror::Error)]
@@ -46,6 +48,14 @@ pub enum DiscoveryError {
     /// and parity assertion vacuously.
     #[error("not a usable discovery document: {0}")]
     Malformed(String),
+    /// A vendored document does not match what `PINNED.toml` recorded for it.
+    ///
+    /// The vendored files are an artifact somebody fetched from CES, not source
+    /// code. Without this check a truncated or hand-edited reference keeps every
+    /// count, census, and parity assertion green while measuring a file nobody
+    /// vouched for.
+    #[error("pinned reference {version}: {detail}")]
+    Pin { version: String, detail: String },
 }
 
 /// Crate name, mirroring the convention used by the sibling crates.
