@@ -187,18 +187,35 @@ impl SimulationEvals {
                 match session.drive_turn(&input).await {
                     Ok(completed) => {
                         let mut audio = None;
-                        if case.modality == Modality::Audio && !completed.agent_audio.is_empty() {
-                            let expected = case
-                                .expectations
-                                .get(turn_index)
-                                .map(|e| e.text.as_str())
-                                .unwrap_or("");
-                            match self.scorer.score(&completed.agent_audio, expected) {
-                                Ok(score) => {
-                                    if !score.passed {
-                                        case_failed = true;
+                        if case.modality == Modality::Audio {
+                            match crate::require_audio(&completed.agent_audio) {
+                                Ok(bytes) => {
+                                    let expected = case
+                                        .expectations
+                                        .get(turn_index)
+                                        .map(|e| e.text.as_str())
+                                        .unwrap_or("");
+                                    match self.scorer.score(bytes, expected) {
+                                        Ok(score) => {
+                                            if !score.passed {
+                                                case_failed = true;
+                                            }
+                                            audio = Some(score);
+                                        }
+                                        Err(EvalError::Core(CoreError::LocationRequired)) => {
+                                            return Err(EvalError::Core(
+                                                CoreError::LocationRequired,
+                                            ));
+                                        }
+                                        Err(_) => {
+                                            case_failed = true;
+                                            summary.errored += 1;
+                                        }
                                     }
-                                    audio = Some(score);
+                                }
+                                Err(EvalError::MissingAgentAudio) => {
+                                    case_failed = true;
+                                    summary.failed += 1;
                                 }
                                 Err(EvalError::Core(CoreError::LocationRequired)) => {
                                     return Err(EvalError::Core(CoreError::LocationRequired));

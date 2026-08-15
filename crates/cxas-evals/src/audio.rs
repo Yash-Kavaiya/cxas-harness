@@ -14,6 +14,7 @@
 
 use crate::EvalError;
 use serde::{Deserialize, Serialize};
+use std::future::Future;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AudioScore {
@@ -51,6 +52,78 @@ impl AudioScorer for TranscriptExactScorer {
             transcript,
             passed,
         })
+    }
+}
+
+pub fn require_audio(bytes: &[u8]) -> Result<&[u8], EvalError> {
+    if bytes.is_empty() {
+        Err(EvalError::MissingAgentAudio)
+    } else {
+        Ok(bytes)
+    }
+}
+
+pub trait HttpStt: Send + Sync {
+    fn transcribe(&self, audio: &[u8]) -> impl Future<Output = Result<String, EvalError>> + Send;
+}
+
+pub struct SpeechPathScorer<H> {
+    stt: H,
+    pass_threshold: f32,
+}
+
+impl<H: HttpStt> SpeechPathScorer<H> {
+    pub fn new(stt: H) -> Self {
+        Self {
+            stt,
+            pass_threshold: 0.8,
+        }
+    }
+
+    fn score_transcript(transcript: String, expected_transcript: &str, threshold: f32) -> AudioScore {
+        let passed = normalize(&transcript) == normalize(expected_transcript);
+        AudioScore {
+            match_score: if passed { 1.0 } else { 0.0 },
+            transcript,
+            passed: passed && 1.0 >= threshold,
+        }
+    }
+}
+
+impl<H: HttpStt> AudioScorer for SpeechPathScorer<H> {
+    fn score(&self, audio: &[u8], expected_transcript: &str) -> Result<AudioScore, EvalError> {
+        let transcript = block_on_stt(self.stt.transcribe(audio))?;
+        Ok(Self::score_transcript(
+            transcript,
+            expected_transcript,
+            self.pass_threshold,
+        ))
+    }
+}
+
+fn block_on_stt<F>(fut: F) -> Result<String, EvalError>
+where
+    F: Future<Output = Result<String, EvalError>>,
+{
+    // Test doubles complete immediately. Production STT adapters should
+    // similarly resolve without parking the eval runtime.
+    fn dummy_raw_waker() -> std::task::RawWaker {
+        fn clone(_: *const ()) -> std::task::RawWaker {
+            dummy_raw_waker()
+        }
+        fn noop(_: *const ()) {}
+        static VTABLE: std::task::RawWakerVTable =
+            std::task::RawWakerVTable::new(clone, noop, noop, noop);
+        std::task::RawWaker::new(std::ptr::null(), &VTABLE)
+    }
+    let waker = unsafe { std::task::Waker::from_raw(dummy_raw_waker()) };
+    let mut cx = std::task::Context::from_waker(&waker);
+    let mut fut = std::pin::pin!(fut);
+    match fut.as_mut().poll(&mut cx) {
+        std::task::Poll::Ready(result) => result,
+        std::task::Poll::Pending => Err(EvalError::AudioScore(
+            "STT future was pending; inject a ready HttpStt or drive it on the runtime".into(),
+        )),
     }
 }
 

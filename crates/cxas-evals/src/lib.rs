@@ -20,7 +20,9 @@ mod report;
 mod simulation;
 mod turn_state;
 
-pub use audio::{AudioScore, AudioScorer, TranscriptExactScorer};
+pub use audio::{
+    require_audio, AudioScore, AudioScorer, HttpStt, SpeechPathScorer, TranscriptExactScorer,
+};
 pub use bidi::{AgentEvent, BidiSession, CesBidi, CompletedTurn};
 pub use cursor::{TurnCursor, UserInput};
 pub use error::EvalError;
