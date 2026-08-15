@@ -45,4 +45,16 @@ impl LintReport {
             .filter(|d| d.severity == Severity::Error)
             .count()
     }
+
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(self).expect("LintReport is always serializable")
+    }
+
+    pub fn exit_code(&self) -> i32 {
+        if self.error_count() > 0 {
+            1
+        } else {
+            0
+        }
+    }
 }
