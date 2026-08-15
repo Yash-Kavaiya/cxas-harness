@@ -12,6 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod page;
+mod template;
+
+pub use page::{paginate, Page};
+pub use template::{render_environment, TemplateValue};
+
+use thiserror::Error;
+
+/// Errors from pagination and environment-template rendering.
+#[derive(Debug, Error, PartialEq, Eq)]
+pub enum UtilsError {
+    #[error("invalid boolean template value")]
+    InvalidBoolTemplate,
+    #[error("{0}")]
+    Other(String),
+}
+
 pub fn crate_name() -> &'static str {
     "cxas-utils"
 }
