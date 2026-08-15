@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+mod bidi;
 mod cursor;
 mod error;
 mod turn_state;
 
+pub use bidi::{AgentEvent, BidiSession, CesBidi, CompletedTurn};
 pub use cursor::{TurnCursor, UserInput};
 pub use error::EvalError;
 pub use turn_state::TurnState;
