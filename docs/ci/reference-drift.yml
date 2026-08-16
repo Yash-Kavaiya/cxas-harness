@@ -1,0 +1,40 @@
+name: reference-drift
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "reference/**"
+      - "tools/refresh_reference.py"
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # Fails only when upstream publishes a revision newer than the pinned
+      # one, or when bytes change at the same revision. Replica skew, where a
+      # backend serves an older revision than the one vendored, is ignored.
+      - name: Check vendored discovery documents against upstream
+        run: python tools/refresh_reference.py --check
+
+# ---------------------------------------------------------------------------
+# Not installed as a GitHub Action yet.
+#
+# Pushing a file under .github/workflows/ requires a token with the `workflow`
+# scope. To enable this job:
+#
+#   gh auth refresh -h github.com -s workflow
+#   mkdir -p .github/workflows
+#   cp docs/ci/reference-drift.yml .github/workflows/reference-drift.yml
+#   git add .github/workflows/reference-drift.yml && git commit && git push
+#
+# Until then the same check runs locally and in any CI that can call Python:
+#
+#   python tools/refresh_reference.py --check
+# ---------------------------------------------------------------------------
