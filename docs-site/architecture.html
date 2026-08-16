@@ -14,7 +14,7 @@
 <article class="page" id="content">
   <p class="kicker">Product</p>
   <h1>Architecture</h1>
-  <p class="lead">Operators and coding agents talk only to the <code>cxas</code> binary. The binary delegates to workspace crates. Live CES and Vertex sit on the other side of a transport trait that this checkout implements with mocks.</p>
+  <p class="lead">Operators and coding agents talk only to the <code>cxas</code> binary. The binary delegates to workspace crates. Live CES sits behind a REST client generated from Google's discovery documents; Vertex still sits behind a trait implemented with fixtures.</p>
 
   <h2>Environment chart</h2>
   <pre class="mermaid">
@@ -94,6 +94,7 @@ flowchart TB
   <table>
     <thead><tr><th>Type</th><th>Use</th></tr></thead>
     <tbody>
+      <tr><td><code>CesHttpClient</code></td><td>Real CES REST client behind the <code>rest</code> feature. 35 of 170 methods, each verified against discovery.</td></tr>
       <tr><td><code>NoopTransport</code></td><td>Default in-process stub. Export and mutate calls succeed with empty or fixture payloads.</td></tr>
       <tr><td><code>RecordingTransport</code></td><td>Captures requests for tests (export stream, version-id, channel settings).</td></tr>
     </tbody>

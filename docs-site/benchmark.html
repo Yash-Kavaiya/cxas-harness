@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Benchmark and Gauntlet Loop · cxas-harness</title>
+  <meta name="description" content="How cxas-harness is graded: Google's CES discovery documents as the benchmark, and a builder/blind-critic loop scored against them.">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="benchmark.html">
+<article class="page" id="content">
+  <p class="kicker">Project</p>
+  <h1>Benchmark and Gauntlet Loop</h1>
+  <p class="lead">A critic is only as sharp as the reference it compares against. This page describes the reference, and the loop built on top of it.</p>
+
+  <h2>The defect that motivated this</h2>
+  <p><code>crates/cxas-proto</code> declared the CES evaluation run state as:</p>
+  <pre><code>Unspecified, Pending, Running, Succeeded, Failed, Cancelled</code></pre>
+  <p>CES declares it as:</p>
+  <pre><code>EVALUATION_RUN_STATE_UNSPECIFIED, QUEUED, RUNNING, COMPLETED, ERROR, CANCELLED</code></pre>
+  <p>Three of six variants were invented, and <code>as_str_name()</code> emitted
+  <code>"PENDING"</code>, <code>"SUCCEEDED"</code> and <code>"FAILED"</code> — strings the
+  CES API has never used. The test that supposedly closed the enum-drift bug
+  (<a href="issues.html">#284</a>) had itself drifted, and 78 passing tests could not see
+  it.</p>
+  <p>The old parity contract could not have caught it. It asserted that a checked-in YAML
+  file contained strings that the same YAML file declared, so it could never fail.</p>
+
+  <h2>The reference</h2>
+  <p>The benchmark is now Google's own machine-readable discovery documents, vendored
+  under <code>reference/ces/</code>:</p>
+  <table>
+    <thead><tr><th></th><th>v1</th><th>v1beta</th><th>total</th></tr></thead>
+    <tbody>
+      <tr><td>REST methods</td><td>66</td><td>104</td><td>170</td></tr>
+      <tr><td>Schemas</td><td>219</td><td>333</td><td>552</td></tr>
+      <tr><td>Schema enum fields</td><td>48</td><td>86</td><td>134</td></tr>
+      <tr><td>Parameter enums</td><td>5</td><td>5</td><td>10</td></tr>
+    </tbody>
+  </table>
+  <p>Both are pinned at revision <code>20260806</code> and verified by sha256 against
+  <code>PINNED.toml</code>, so a truncated or hand-edited reference is rejected rather
+  than silently measured.</p>
+  <p>Every evaluation resource — <code>evaluations</code>, <code>evaluationRuns</code>,
+  <code>evaluationDatasets</code>, <code>evaluationExpectations</code>,
+  <code>scheduledEvaluationRuns</code> — exists <strong>only on v1beta</strong>. A test
+  enforces that nothing models evaluations against v1, where they do not exist at all.</p>
+
+  <h3>Replica skew</h3>
+  <p>The discovery endpoint is served from replicas that disagree. Fetching
+  <code>?version=v1</code> repeatedly returns revision <code>20260730</code> and
+  <code>20260806</code> in no stable order, so a byte-comparison drift check flapped
+  between pass and fail against an unchanged upstream. The refresh tool fetches five
+  times, keeps the highest revision, and treats the pinned revision as a high-water mark:
+  drift is reported only when upstream publishes something newer, or when bytes change at
+  the same revision.</p>
+
+  <h2>What is enforced</h2>
+  <table>
+    <thead><tr><th>Test</th><th>Asserts</th></tr></thead>
+    <tbody>
+      <tr><td><code>enum_variants_match_discovery</code></td><td>every declared enum variant matches its CES wire spelling exactly</td></tr>
+      <tr><td><code>declared_methods_resolve_in_discovery</code></td><td>every method <code>cxas-core</code> implements exists in discovery with the same verb and path template</td></tr>
+      <tr><td><code>evaluation_methods_are_never_declared_against_v1</code></td><td>no evaluation method is registered on a surface that has none</td></tr>
+      <tr><td><code>coverage_report</code></td><td>reports implemented/total; deliberately does not gate</td></tr>
+    </tbody>
+  </table>
+  <p>The coverage report does not gate on purpose. A pass/fail threshold can be satisfied
+  by deleting the metric; a printed number cannot.</p>
+  <pre><code>CES-COVERAGE v1=23/66 v1beta=12/104 total=35/170</code></pre>
+
+  <h2>The Gauntlet Loop</h2>
+  <p><code>gauntlet/</code> is repo tooling and is never shipped in the <code>cxas</code>
+  binary — nothing under it is a Cargo workspace member. Three roles, separated
+  structurally rather than by instruction:</p>
+  <table>
+    <thead><tr><th>Role</th><th>Sees</th><th>May</th></tr></thead>
+    <tbody>
+      <tr><td>Orchestrator</td><td>scorecards</td><td>plan, fan out, merge — never implement or critique</td></tr>
+      <tr><td>Builder</td><td>its own crate, the critic's last gap</td><td>edit that crate only</td></tr>
+      <tr><td>Critic</td><td>the evidence bundle, nothing else</td><td>score and name one gap — never implement</td></tr>
+    </tbody>
+  </table>
+  <p>The evidence bundle is built by <code>gauntlet/evidence.py</code> — deterministic
+  code, not an agent — <em>after</em> the builder finishes, so the builder cannot shape
+  what the critic sees.</p>
+  <table>
+    <thead><tr><th>Critic receives</th><th>Critic never receives</th></tr></thead>
+    <tbody>
+      <tr><td><code>cargo test</code> output</td><td>crate source code</td></tr>
+      <tr><td><code>cargo clippy</code> output</td><td>the diff</td></tr>
+      <tr><td>discovery coverage and revisions</td><td>commit messages</td></tr>
+      <tr><td>assigned-issue reproductions</td><td>the builder's rationale</td></tr>
+      <tr><td>binary size</td><td>any self-assessment</td></tr>
+    </tbody>
+  </table>
+  <p>That blindness is asserted, not merely documented:
+  <code>test_bundle_excludes_source_code</code> fails if source ever reaches a critic. If
+  it did, the loop would degenerate into self-grading — the exact failure this design
+  exists to prevent.</p>
+
+  <h3>Running it</h3>
+  <pre><code>python gauntlet/orchestrator.py             # every piece
+python gauntlet/orchestrator.py cxas-proto  # one piece</code></pre>
+  <p><code>agent_cmd</code> in <code>gauntlet/config.toml</code> is any CLI that reads a
+  prompt on stdin and writes a response on stdout — <code>claude -p</code>,
+  <code>gemini -p</code>, <code>codex exec</code>. No provider SDK is imported, so
+  swapping providers is a one-line change.</p>
+
+  <h3>Stop conditions</h3>
+  <p>The loop has no natural finish line, so the stop conditions are explicit:
+  <code>max_rounds</code> per piece, <code>budget_usd</code> overall, and a
+  release-candidate gate requiring every catalogued issue to have a reproduction test,
+  full enum parity against discovery, and coverage at or above
+  <code>rc_coverage_min</code>. On reaching the gate the orchestrator stops and hands back
+  for human review.</p>
+  <p>A round fails — never silently passes — when the critic returns unparseable output,
+  returns nothing, or when the configured agent binary is missing or times out. Silence is
+  not consent.</p>
+
+  <h2>Refreshing the reference</h2>
+  <pre><code>python tools/refresh_reference.py           # re-vendor and re-pin
+python tools/refresh_reference.py --check   # fail if upstream is newer</code></pre>
+  <p>The <code>--check</code> form runs in CI so upstream API drift arrives as a
+  reviewable pull request rather than a silent behavioural change.</p>
+</article>
+<script src="assets/site.js"></script>
+</body>
+</html>

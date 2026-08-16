@@ -28,6 +28,7 @@
     {
       title: "Project",
       items: [
+        ["benchmark.html", "Benchmark and Gauntlet"],
         ["issues.html", "Issue coverage"],
         ["design.html", "Design specs"],
         ["limits.html", "Limits and honesty"],
