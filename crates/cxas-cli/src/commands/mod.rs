@@ -13,6 +13,7 @@
 // limitations under the License.
 
 pub mod actions;
+pub mod api;
 pub mod deploy;
 pub mod diff;
 pub mod evals;
@@ -31,6 +32,7 @@ use std::path::{Path, PathBuf};
 pub fn dispatch(matches: &ArgMatches, out: &mut impl Write) -> i32 {
     let format = OutputFormat::parse(matches.get_one::<String>("format").map(String::as_str));
     match matches.subcommand() {
+        Some(("api", sub)) => api::run(sub, format, out),
         Some(("lint", sub)) => lint::run(sub, format, out),
         Some(("pull", sub)) => pull::run(sub, format, out),
         Some(("actions", sub)) => match sub.subcommand() {
@@ -112,14 +114,14 @@ fn run_session(format: OutputFormat, out: &mut impl Write) -> i32 {
 fn llm_lint(_matches: &ArgMatches, format: OutputFormat, out: &mut impl Write) -> i32 {
     #[cfg(not(feature = "llm"))]
     {
-        return write_err(
+        write_err(
             out,
             format,
             "llm-lint",
             "FEATURE_DISABLED",
             "llm-lint requires --features llm",
             2,
-        );
+        )
     }
     #[cfg(feature = "llm")]
     {

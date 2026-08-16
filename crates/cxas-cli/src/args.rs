@@ -40,6 +40,7 @@ pub fn build_parser() -> Command {
                 .global(true)
                 .num_args(1),
         )
+        .subcommand(api_cmd())
         .subcommand(lint_cmd())
         .subcommand(pull_cmd())
         .subcommand(actions_cmd())
@@ -75,6 +76,67 @@ pub fn build_parser() -> Command {
         .subcommand(dir_cmd("agent"))
         .subcommand(dir_cmd("tool"))
         .subcommand(dir_cmd("guardrail"))
+}
+
+/// `cxas api` -- list, describe, and issue any declared CES method.
+///
+/// Generic on purpose: 170 methods do not need 170 subcommands, and the ones
+/// worth naming already have their own verbs elsewhere in this binary.
+fn api_cmd() -> Command {
+    Command::new("api")
+        .about("Address the CES REST surface directly")
+        .subcommand(
+            Command::new("list")
+                .about("List every method CES declares")
+                .arg(api_version_arg())
+                .arg(Arg::new("filter").long("filter").num_args(1))
+                .arg(
+                    Arg::new("modelled")
+                        .long("modelled")
+                        .action(ArgAction::SetTrue),
+                ),
+        )
+        .subcommand(
+            Command::new("describe")
+                .about("Show one method's verb, path, and parameters")
+                .arg(Arg::new("method").num_args(1))
+                .arg(api_version_arg()),
+        )
+        .subcommand(api_request_cmd("call", "Issue a method and print its response"))
+        .subcommand(api_request_cmd(
+            "stream",
+            "Issue a streaming method, printing each message as it arrives",
+        ))
+}
+
+fn api_version_arg() -> Arg {
+    Arg::new("api-version")
+        .long("api-version")
+        .num_args(1)
+        .value_parser(["v1", "v1beta"])
+}
+
+fn api_request_cmd(name: &'static str, about: &'static str) -> Command {
+    Command::new(name)
+        .about(about)
+        .arg(Arg::new("method").num_args(1))
+        .arg(api_version_arg())
+        .arg(
+            Arg::new("param")
+                .long("param")
+                .short('p')
+                .num_args(1)
+                .action(ArgAction::Append),
+        )
+        .arg(
+            Arg::new("query")
+                .long("query")
+                .short('q')
+                .num_args(1)
+                .action(ArgAction::Append),
+        )
+        .arg(Arg::new("body").long("body").num_args(1))
+        .arg(Arg::new("endpoint").long("endpoint").num_args(1))
 }
 
 fn loc_args() -> [Arg; 2] {

@@ -10,7 +10,10 @@ name = "cxas"
 path = "src/main.rs"
 
 [features]
-default = []
+default = ["remote"]
+# Live CES calls. On by default: a harness that cannot reach the service is
+# a linter. Off, `cxas api call` reports FEATURE_DISABLED rather than vanishing.
+remote = ["cxas-core/rest"]
 llm = ["cxas-lint/llm"]
 
 [dependencies]
