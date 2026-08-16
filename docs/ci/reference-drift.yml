@@ -8,6 +8,8 @@ on:
     paths:
       - "reference/**"
       - "tools/refresh_reference.py"
+      - "tools/generate_methods.py"
+      - "crates/cxas-core/src/rest/method_table.rs"
 
 jobs:
   drift:
@@ -23,6 +25,18 @@ jobs:
       - name: Check vendored discovery documents against upstream
         run: python tools/refresh_reference.py --check
 
+      # The method table is generated from the vendored documents and checked
+      # in. This catches the sequence that actually happens: someone refreshes
+      # the reference, forgets to regenerate, and the table quietly describes an
+      # API that is no longer the pinned one.
+      - name: Check the generated method table is not stale
+        run: python tools/generate_methods.py --check
+
+      - name: Run the tool tests
+        run: |
+          python -m pip install --quiet pytest
+          python -m pytest tests gauntlet/tests -q
+
 # ---------------------------------------------------------------------------
 # Not installed as a GitHub Action yet.
 #
@@ -34,7 +48,8 @@ jobs:
 #   cp docs/ci/reference-drift.yml .github/workflows/reference-drift.yml
 #   git add .github/workflows/reference-drift.yml && git commit && git push
 #
-# Until then the same check runs locally and in any CI that can call Python:
+# Until then the same checks run locally and in any CI that can call Python:
 #
 #   python tools/refresh_reference.py --check
+#   python tools/generate_methods.py --check
 # ---------------------------------------------------------------------------

@@ -94,7 +94,9 @@ flowchart TB
   <table>
     <thead><tr><th>Type</th><th>Use</th></tr></thead>
     <tbody>
-      <tr><td><code>CesHttpClient</code></td><td>Real CES REST client behind the <code>rest</code> feature. 35 of 170 methods, each verified against discovery.</td></tr>
+      <tr><td><code>CesHttpClient</code></td><td>Real CES REST client behind the <code>rest</code> feature. All 170 methods addressable, each verified against discovery.</td></tr>
+      <tr><td><code>TokenProvider</code></td><td>Application Default Credentials: env token, authorized-user file, metadata server, or <code>gcloud</code>. Cached and refreshed a minute before expiry.</td></tr>
+      <tr><td><code>JsonStreamDecoder</code></td><td>Splits a streamed response into whole messages as they arrive. A stream ending mid-message is an error, not a short result.</td></tr>
       <tr><td><code>NoopTransport</code></td><td>Default in-process stub. Export and mutate calls succeed with empty or fixture payloads.</td></tr>
       <tr><td><code>RecordingTransport</code></td><td>Captures requests for tests (export stream, version-id, channel settings).</td></tr>
     </tbody>

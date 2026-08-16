@@ -29,7 +29,7 @@
 
   <h2>What this project is</h2>
   <p><code>cxas-harness</code> is an independent Rust rewrite of Google Cloud's <a href="https://github.com/GoogleCloudPlatform/cxas-scrapi">cxas-scrapi</a>. It is a CLI (<code>cxas</code>) plus nine workspace crates. Design work followed Superpowers specs and plans dated 2026-08-15 under <code>docs/superpowers/</code>.</p>
-  <p><code>cxas-core</code> speaks the real CES REST surface: <strong>35 of 170 methods</strong> are declared and verified against Google's vendored discovery documents, with an HTTP client behind the <code>rest</code> feature. The CLI still reads and writes <code>.cxas/catalog.json</code>; wiring the commands onto the live client is the next phase. Tests never require a cloud project. Location is never silently defaulted to <code>"global"</code> — every CES path template embeds <code>projects/*/locations/*</code>, so a resource name cannot be built without one.</p>
+  <p><code>cxas-core</code> speaks the real CES REST surface. All <strong>170 methods</strong> CES declares are addressable through <code>cxas api</code>, from a table generated out of Google's vendored discovery documents; <strong>37</strong> are additionally modelled with this workspace's own types and CLI verbs. Credentials resolve through Application Default Credentials, and <code>streamRunSession</code> is delivered message by message. Tests never require a cloud project. Location is never silently defaulted to <code>"global"</code> — every CES path template embeds <code>projects/*/locations/*</code>, so a resource name cannot be built without one.</p>
 
   <div class="cards">
     <article class="card">

@@ -38,7 +38,10 @@
     <li><code>METHODS</code>, <code>MethodSpec</code>, <code>method_spec</code> — the CES methods this crate implements, verified against discovery</li>
     <li><code>AppRef</code>, <code>LocationRef</code> — typed resource names; neither can be built without a <code>Location</code></li>
     <li><code>RequestBuilder</code>, <code>RestRequest</code>, <code>expand_path</code> — pure request construction</li>
-    <li><code>CesHttpClient</code> — live REST client (<code>rest</code> feature)</li>
+    <li><code>CesHttpClient</code> — live REST client, unary and streaming (<code>rest</code> feature)</li>
+    <li><code>TokenProvider</code> — ADC credential resolution, caching, refresh</li>
+    <li><code>METHODS</code> — all 170 CES methods, generated from discovery</li>
+    <li><code>MODELLED</code> — the 37 this workspace models with its own types</li>
   </ul>
 
   <h2>cxas-utils</h2>

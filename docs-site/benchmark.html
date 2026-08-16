@@ -62,14 +62,34 @@
     <thead><tr><th>Test</th><th>Asserts</th></tr></thead>
     <tbody>
       <tr><td><code>enum_variants_match_discovery</code></td><td>every declared enum variant matches its CES wire spelling exactly</td></tr>
-      <tr><td><code>declared_methods_resolve_in_discovery</code></td><td>every method <code>cxas-core</code> implements exists in discovery with the same verb and path template</td></tr>
+      <tr><td><code>declared_methods_resolve_in_discovery</code></td><td>every method <code>cxas-core</code> declares exists in discovery with the same verb and path template</td></tr>
+      <tr><td><code>declared_table_matches_discovery_exactly</code></td><td>the generated table and the reference agree in <em>both</em> directions -- a method CES added that the table lacks fails too</td></tr>
+      <tr><td><code>modelled_methods_are_addressable</code></td><td>nothing in <code>MODELLED</code> names a method CES no longer declares</td></tr>
       <tr><td><code>evaluation_methods_are_never_declared_against_v1</code></td><td>no evaluation method is registered on a surface that has none</td></tr>
       <tr><td><code>coverage_report</code></td><td>reports implemented/total; deliberately does not gate</td></tr>
     </tbody>
   </table>
   <p>The coverage report does not gate on purpose. A pass/fail threshold can be satisfied
   by deleting the metric; a printed number cannot.</p>
-  <pre><code>CES-COVERAGE v1=23/66 v1beta=12/104 total=35/170</code></pre>
+  <pre><code>CES-COVERAGE addressable v1=66/66 v1beta=104/104 total=170/170 modelled=37/170</code></pre>
+  <p>Two numbers because they mean different things. <em>Addressable</em> is generated
+  from the discovery documents and says a request can be built and sent.
+  <em>Modelled</em> is hand-written and says this workspace has an opinion about what
+  the resource is and what failure means for it. Reporting only the first would be
+  the same flattery this page exists to argue against.</p>
+
+  <h3>Generated, not hand-listed</h3>
+  <p>The method table is produced by <code>tools/generate_methods.py</code> and checked
+  in, rather than built by a <code>build.rs</code>. A build script that parsed JSON would
+  make every downstream build depend on the reference files; one that fetched them would
+  make builds depend on the network. Checking the table in keeps the build hermetic.</p>
+  <p>Because the table is generated from the reference, the parity test comparing them is
+  a <em>staleness</em> check rather than an independent verification -- and staleness is
+  the failure that actually happens. Refreshing the reference without regenerating leaves
+  the table describing an API that is no longer the pinned one, and nothing else in the
+  workspace would notice.</p>
+  <pre><code>python tools/generate_methods.py           # regenerate
+python tools/generate_methods.py --check   # fail if stale</code></pre>
 
   <h2>The Gauntlet Loop</h2>
   <p><code>gauntlet/</code> is repo tooling and is never shipped in the <code>cxas</code>

@@ -74,9 +74,68 @@
       <tr><td><code>ci-test</code> / <code>local-test</code></td><td><code>--display-name</code></td><td>CI-shaped eval wrappers</td></tr>
       <tr><td><code>agent</code> / <code>tool</code> / <code>guardrail</code></td><td><code>--app-dir</code></td><td>Local resource helpers</td></tr>
       <tr><td><code>llm-lint</code></td><td><code>--app-dir</code></td><td>Requires <code>--features llm</code></td></tr>
+      <tr><td><code>api list</code></td><td><code>--api-version</code> <code>--filter</code> <code>--modelled</code></td><td>Every CES method, offline, from the generated table</td></tr>
+      <tr><td><code>api describe</code></td><td>method id, <code>--api-version</code></td><td>Verb, path template, and required parameters</td></tr>
+      <tr><td><code>api call</code></td><td><code>--param</code> <code>--query</code> <code>--body</code> <code>--endpoint</code></td><td><strong>Live CES request</strong>; response returned verbatim</td></tr>
+      <tr><td><code>api stream</code></td><td>same as <code>api call</code></td><td><strong>Live streaming request</strong>; one message per line</td></tr>
       <tr><td><code>run-session</code></td><td>--</td><td>Requires a TTY; otherwise exit 2</td></tr>
     </tbody>
   </table>
+
+  <h2>Reaching CES: <code>cxas api</code></h2>
+  <p>The rest of this binary works on a checked-out app directory and its
+  <code>.cxas</code> state. <code>cxas api</code> is the other half: every method CES
+  declares, addressed by its discovery id.</p>
+  <p>Generic rather than one subcommand per method, because there are 170 of them and a
+  hand-written verb for each would add a spelling to remember and nothing else. What a
+  caller genuinely cannot do unaided is discover the ids, know which surface declares
+  them, and see which parameters a path needs -- so <code>list</code> and
+  <code>describe</code> do exactly that, offline.</p>
+
+  <pre><code>cxas api list --filter evaluationRuns
+cxas api describe ces.projects.locations.apps.get
+
+cxas api call ces.projects.locations.apps.list \
+  --param parent=projects/my-project/locations/us-central1 \
+  --query pageSize=25
+
+cxas api stream ces.projects.locations.apps.sessions.streamRunSession \
+  --param session=projects/my-project/locations/us-central1/apps/demo/sessions/s1 \
+  --body '{"query":"hello"}'</code></pre>
+
+  <h3>Errors that arrive before the request does</h3>
+  <table>
+    <thead><tr><th>Code</th><th>When</th></tr></thead>
+    <tbody>
+      <tr><td><code>MISSING_PARAMETER</code></td><td>A path template variable was not supplied. Named locally, so the answer is the parameter rather than a 404 from CES.</td></tr>
+      <tr><td><code>UNKNOWN_METHOD</code></td><td>No such method. If the id exists on the other surface -- every evaluation method is v1beta-only -- the error says so instead of guessing.</td></tr>
+      <tr><td><code>NOT_STREAMING</code></td><td><code>api stream</code> on a method that returns a single response.</td></tr>
+      <tr><td><code>USAGE</code></td><td>A malformed <code>--param</code>, or a <code>--body</code> that is not valid JSON.</td></tr>
+      <tr><td><code>AUTH</code></td><td>No usable credential, or one that cannot be turned into a token.</td></tr>
+      <tr><td><code>CES</code></td><td>The service answered non-2xx. Its own message is preserved.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Credentials</h3>
+  <p>Resolved the way Google's own tools resolve them, highest precedence first:</p>
+  <table>
+    <thead><tr><th>Source</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>--oauth-token</code></td><td>Used verbatim; never refreshed</td></tr>
+      <tr><td><code>CXAS_ACCESS_TOKEN</code></td><td>The CI escape hatch</td></tr>
+      <tr><td><code>GOOGLE_APPLICATION_CREDENTIALS</code></td><td>Authorized-user files only</td></tr>
+      <tr><td>Well-known ADC file</td><td><code>~/.config/gcloud/</code>, or <code>%APPDATA%\gcloud\</code> on Windows</td></tr>
+      <tr><td>Metadata server</td><td>GCE, Cloud Run, GKE</td></tr>
+      <tr><td><code>gcloud auth print-access-token</code></td><td>The ordinary local-dev path</td></tr>
+    </tbody>
+  </table>
+  <p>Tokens are cached and refreshed a minute before expiry, so a long-running process
+  neither fails mid-flight nor mints a token per request.</p>
+  <p>An unusable credential at a higher precedence is an error rather than a reason to
+  fall through. If <code>GOOGLE_APPLICATION_CREDENTIALS</code> points at a service-account
+  key -- which needs signing this workspace does not do -- authenticating as the developer
+  instead would send the request as the wrong principal, and the resulting 403 would point
+  at the wrong problem.</p>
 
   <h2>Location-bearing flags</h2>
   <p>Most CES-shaped commands accept:</p>

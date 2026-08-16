@@ -22,15 +22,18 @@ cargo run -p cxas-cli -- --help
 | Local catalog | File-backed app/deployment store at `.cxas/catalog.json` (no implicit `"global"` location) |
 | Workspace crates | Independent libraries for proto, core, evals, lint, migration, state, utils |
 | Quality bar | Unit tests close the cataloged `cxas-scrapi` issue classes (enum drift, eval cursor, DTMF hang, lint root-agent, snapshot RAII, …) |
+| Live CES access | `cxas api` addresses **all 170 CES methods**, with ADC credential resolution and server streaming |
 | Benchmark | Google's own CES discovery documents, vendored at a pinned revision — 66 methods in v1, 104 in v1beta |
 | Gauntlet Loop | Builder/blind-critic loop under `gauntlet/`, scored against that benchmark |
 
-`cxas-core` speaks the real CES REST surface: **35 of 170 methods** are declared and
-verified against the vendored discovery documents, with an HTTP client behind the
-`rest` feature. The CLI still reads and writes a local catalog at `.cxas/catalog.json`;
-wiring the commands onto the live client is the next phase. Location is never defaulted
-to `"global"` — every CES path template embeds `projects/*/locations/*`, so a resource
-name cannot be built without one.
+`cxas-core` speaks the real CES REST surface. Every one of the **170 methods** CES
+declares is addressable, from a table generated out of the vendored discovery documents;
+**37** of them are additionally modelled with this workspace's own types and CLI verbs.
+The two numbers are reported separately, because generating 170 path templates is cheap
+and deciding what a `Deployment` is, and what happens when promoting one fails, is not.
+
+Location is never defaulted to `"global"` — every CES path template embeds
+`projects/*/locations/*`, so a resource name cannot be built without one.
 
 ## Environment chart
 
@@ -46,12 +49,14 @@ flowchart TB
 
     subgraph cli [cxas-cli]
         CLI["cxas binary<br/>JSON envelope + exit codes"]
+        Api["cxas api<br/>list / describe / call / stream"]
         Catalog[".cxas/catalog.json<br/>local app catalog"]
+        CLI --> Api
         CLI --> Catalog
     end
 
     subgraph workspace [Rust workspace]
-        Core["cxas-core<br/>Location, REST registry, HTTP client"]
+        Core["cxas-core<br/>Location, REST table, auth, HTTP + streaming"]
         State["cxas-state<br/>hash / diff / cascading profiles"]
         Lint["cxas-lint<br/>V-ROOT + 60+ rules"]
         Evals["cxas-evals<br/>TurnCursor, BidiSession, AudioScorer"]
@@ -79,7 +84,7 @@ flowchart TB
         GCP["GCP project + region"]
     end
 
-    Core -->|"REST, 35/170 methods"| CES
+    Core -->|"REST, 170/170 methods"| CES
     Evals -.->|"future STT / eval quota"| Vertex
     CES -.-> GCP
     Vertex -.-> GCP
@@ -95,7 +100,7 @@ cxas-harness/
     cxas-parity      Phase 0  Python CLI-shape reference + discovery contract
     cxas-discovery   Phase 6  Parser over the vendored CES discovery documents
     cxas-proto       Phase 0  EvaluationRunState, real CES wire values  (#284)
-    cxas-core        Phase 1  Location, REST method registry, HTTP client
+    cxas-core        Phase 1  Location, REST table, ADC auth, HTTP + streaming
     cxas-utils       Phase 1  Pagination + boolean env templates     (#256)
     cxas-state       Phase 1  Content-addressed hash / diff / profiles (#131, #270)
     cxas-evals       Phase 2  Simulation cursor, bidi DTMF, audio     (#355, #345, #136)
@@ -194,6 +199,8 @@ Envelope:
 | `actions init` | GitHub Actions workflow from `environment.json` |
 | `migrate dfcx` | Non-interactive DFCX pipeline (no TUI by default) |
 | `conversations` / `deployments` / `versions` / `insights` | Catalog / mock resources |
+| `api list` / `api describe` | Every CES method, its surface, verb, path, and parameters (offline) |
+| `api call` / `api stream` | Issue any CES method against the live service |
 | `llm-lint` | Requires `--features llm` |
 | `run-session` | Requires a TTY |
 
@@ -215,17 +222,72 @@ Representative closers already tested in-process:
 
 ## Talking to CES
 
-`cxas-core` declares each CES method as data, and `cxas-parity` asserts every entry
-resolves in the vendored discovery document with the same verb and path template. A
-typo in a path fails the test suite instead of a live request.
+`cxas-core` carries every method CES declares as a generated table, and `cxas-parity`
+asserts the table and the vendored discovery documents agree **in both directions** — a
+method CES added that the table lacks fails just as loudly as a path the table invented.
 
 ```text
-CES-COVERAGE v1=23/66 v1beta=12/104 total=35/170
+CES-COVERAGE addressable v1=66/66 v1beta=104/104 total=170/170 modelled=37/170
 ```
+
+Two numbers on purpose. *Addressable* is generated, and says a request can be built and
+sent. *Modelled* is hand-written, and says this workspace has an opinion about what the
+resource is and what failure means for it. Collapsing them into one flattering figure is
+the thing this project exists to avoid.
 
 Evaluations are registered only against `v1beta`, because the `v1` surface exposes no
 evaluation resources at all — a test enforces that, since declaring one on `v1` would
 build a URL that can only ever 404.
+
+### From the command line
+
+```sh
+cxas api list --filter evaluationRuns          # what exists, offline
+cxas api describe ces.projects.locations.apps.get
+
+cxas api call ces.projects.locations.apps.list \
+  --param parent=projects/my-project/locations/us-central1 \
+  --query pageSize=25
+
+cxas api stream ces.projects.locations.apps.sessions.streamRunSession \
+  --param session=projects/my-project/locations/us-central1/apps/demo/sessions/s1 \
+  --body '{"query":"hello"}'
+```
+
+A missing path parameter is named before anything is sent, so the reply is the parameter
+name rather than a 404 from CES. Naming an evaluation method with `--api-version v1`
+reports where the method actually lives instead of a bare "not found".
+
+### Credentials
+
+Resolved the way Google's own tools resolve them, highest precedence first:
+
+| Source | Notes |
+|---|---|
+| `--oauth-token` | Used verbatim; never refreshed |
+| `CXAS_ACCESS_TOKEN` | The CI escape hatch |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Authorized-user files only |
+| `~/.config/gcloud/application_default_credentials.json` | `%APPDATA%\gcloud\...` on Windows |
+| Metadata server | GCE, Cloud Run, GKE |
+| `gcloud auth print-access-token` | The ordinary local-dev path |
+
+Tokens are cached and refreshed a minute before expiry, so a long-running process does
+not fail mid-flight and does not mint a token per request.
+
+Service-account key files and workload-identity federation are **not** implemented: both
+need signing this workspace does not do. An unusable credential at a higher precedence is
+an error rather than a reason to fall through — silently authenticating as the developer
+when the operator configured a robot would send the request as the wrong principal and
+make the resulting 403 point at the wrong problem.
+
+### Streaming
+
+`streamRunSession` is delivered message by message as it arrives, never buffered to
+completion. A stream that ends mid-message is an error rather than a short result: a
+dropped connection and a finished conversation are otherwise indistinguishable, and
+whatever did arrive whole is still reported.
+
+### Library use
 
 Request construction is pure and always compiled: URL expansion, query encoding, header
 assembly, and status-to-error mapping are testable without a network or a credential.
@@ -239,7 +301,7 @@ cargo test -p cxas-core --features rest
 use cxas_core::{method_spec, ApiVersion, AppRef, CesHttpClient, Location};
 
 let app = AppRef::new("my-project", Location::new("us-central1")?, "my-app")?;
-let client = CesHttpClient::new(oauth_token)?;
+let client = CesHttpClient::discover(None)?;   // ADC, cached and refreshed
 let spec = method_spec("ces.projects.locations.apps.get", ApiVersion::V1).unwrap();
 let json = client.call(spec, &params, &query, None).await?;
 ```
@@ -252,10 +314,19 @@ the workspace would catch, so both directions are tested.
 ## Benchmark and the Gauntlet Loop
 
 The API benchmark is Google's own CES discovery documents, vendored under
-[`reference/ces/`](reference/ces/) at a pinned revision: **66 methods in v1, 104
-in v1beta**. [`crates/cxas-discovery`](crates/cxas-discovery) parses them, and
-`cxas-parity` asserts that every enum variant this workspace declares matches
-its CES wire spelling exactly.
+[`reference/ces/`](reference/ces/) at a pinned revision and verified by sha256:
+**66 methods in v1, 104 in v1beta**. [`crates/cxas-discovery`](crates/cxas-discovery)
+parses them; `cxas-parity` asserts that every enum variant this workspace declares
+matches its CES wire spelling exactly, and that the generated method table has not
+fallen behind the reference.
+
+Refreshing the reference and regenerating the table:
+
+```sh
+python tools/refresh_reference.py            # re-vendor and re-pin
+python tools/generate_methods.py             # regenerate the method table
+python tools/generate_methods.py --check     # fail if the table is stale
+```
 
 That contract found a real defect on its first run. `EvaluationRunState`
 declared `PENDING`/`SUCCEEDED`/`FAILED` where CES declares

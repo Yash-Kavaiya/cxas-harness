@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Limits and honesty · cxas-harness</title>
-  <meta name="description" content="What cxas-harness does and does not do: real CES REST surface at 35 of 170 methods, what is still local, and remaining work.">
+  <meta name="description" content="What cxas-harness does and does not do: all 170 CES REST methods addressable, 37 modelled, what is still local, and remaining work.">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -17,15 +17,32 @@
 
   <h2>What works now</h2>
   <ul>
-    <li>Full Cargo workspace, 144 tests passing (150 with <code>--features cxas-core/rest</code>)</li>
-    <li><strong>35 of 170 CES REST methods declared and verified against Google's discovery documents</strong>, with a working HTTP client behind the <code>rest</code> feature</li>
+    <li>Full Cargo workspace, <strong>221 Rust tests</strong> and <strong>45 Python tests</strong> passing, clippy clean</li>
+    <li><strong>All 170 CES REST methods addressable</strong>, from a table generated out of Google's discovery documents and checked against them in both directions</li>
+    <li><strong>Application Default Credentials</strong>: environment token, authorized-user file, metadata server, or <code>gcloud</code> — cached and refreshed before expiry</li>
+    <li><strong>Server streaming</strong>: <code>streamRunSession</code> delivered message by message, with truncation reported rather than rounded down</li>
+    <li><code>cxas api list / describe / call / stream</code> — the live surface, with offline discovery of what exists</li>
     <li>Every CLI verb in the parser dispatches and returns a JSON envelope</li>
     <li>Local catalog persistence across processes</li>
     <li>Location newtype: no <code>Default</code>, and no resource name can be built without one</li>
-    <li>Lint registry, eval cursor/DTMF/audio scorers, snapshot RAII, tool sync -- in-process</li>
+    <li>Lint registry, eval cursor/DTMF/audio scorers, snapshot RAII, tool sync — in-process</li>
     <li><code>actions init</code> writes workflow files from templates</li>
     <li>Gauntlet builder/blind-critic loop under <code>gauntlet/</code>, tested against a stub agent</li>
   </ul>
+
+  <h2>Addressable is not modelled</h2>
+  <p>Two coverage numbers are reported, and the gap between them is the honest
+  description of this checkout:</p>
+  <table>
+    <thead><tr><th></th><th>Count</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td>Addressable</td><td>170 / 170</td><td>Generated. A request can be built, signed, and sent, and the response returned verbatim.</td></tr>
+      <tr><td>Modelled</td><td>37 / 170</td><td>Hand-written. This workspace has a type for the resource and an opinion about what its failures mean.</td></tr>
+    </tbody>
+  </table>
+  <p>Generating 170 path templates is cheap. Deciding what a <code>Deployment</code> is,
+  and what should happen when promoting one fails halfway, is not. Collapsing the two
+  into a single figure would be the kind of flattery this project was built to avoid.</p>
 
   <h2>The benchmark, and what it caught</h2>
   <p>The API benchmark is Google's own CES discovery documents, vendored under
@@ -33,7 +50,7 @@
   104 in v1beta, verified by sha256 against <code>PINNED.toml</code>.</p>
   <p>On its first run that contract found a real defect. <code>EvaluationRunState</code>
   declared <code>PENDING</code>/<code>SUCCEEDED</code>/<code>FAILED</code> where CES
-  declares <code>QUEUED</code>/<code>COMPLETED</code>/<code>ERROR</code> -- the test
+  declares <code>QUEUED</code>/<code>COMPLETED</code>/<code>ERROR</code> — the test
   closing the enum-drift bug (#284) had itself drifted, invisibly to 78 passing tests.
   The previous parity contract could not have caught it: it asserted that a checked-in
   YAML contained strings that same YAML declared.</p>
@@ -42,22 +59,34 @@
   <table>
     <thead><tr><th>Surface</th><th>Reality</th></tr></thead>
     <tbody>
-      <tr><td>CES REST coverage</td><td>35 of 170 methods. The other 135 are unimplemented and reported as such, not quietly claimed.</td></tr>
-      <tr><td>CLI wiring</td><td>Commands still read and write <code>.cxas/catalog.json</code>. The live client exists in <code>cxas-core</code> but the CLI does not call it yet.</td></tr>
-      <tr><td>GCP auth</td><td>Bearer token only. No Application Default Credentials discovery, no token refresh.</td></tr>
-      <tr><td>Bidi streaming</td><td><code>streamRunSession</code> is not implemented. DTMF/voice turn logic is in-process against fixtures.</td></tr>
+      <tr><td>Typed request and response bodies</td><td>Bodies are JSON in, JSON out. Only 37 methods have a Rust type behind them; the other 133 hand you the raw document.</td></tr>
+      <tr><td>Catalog commands</td><td><code>create</code>, <code>push</code>, <code>apps list</code> and friends still read and write <code>.cxas/catalog.json</code>. <code>cxas api</code> is the live path; the catalog verbs have not been moved onto it.</td></tr>
+      <tr><td>Service-account keys</td><td>Not implemented — needs RS256 JWT signing. A key file is refused by name, with the supported alternatives listed, rather than silently falling through to another identity.</td></tr>
+      <tr><td>Workload identity federation</td><td>Not implemented — needs an STS token exchange. Same explicit refusal.</td></tr>
+      <tr><td>Long-running operations</td><td>An <code>Operation</code> is returned as-is. No polling, no wait-for-completion helper.</td></tr>
+      <tr><td>Retries and backoff</td><td>None. A 429 or 503 is returned as a typed error; the caller decides.</td></tr>
+      <tr><td>Bidirectional streaming</td><td>Server streaming works. True bidi (client and server talking at once) is not offered by the REST surface and is not implemented here.</td></tr>
       <tr><td><code>deploy</code> / <code>migrate</code></td><td>Local catalog + pipeline fixtures. No Cloud deploy job.</td></tr>
       <tr><td>Vertex STT / Gemini llm-lint</td><td>STT is a trait. <code>llm-lint</code> needs <code>--features llm</code> and a real key you supply later.</td></tr>
       <tr><td><code>run-session</code></td><td>Requires a TTY. Not for CI.</td></tr>
       <tr><td>Gauntlet</td><td>Implemented under <code>gauntlet/</code>, never shipped in the binary. Not yet run against a live model.</td></tr>
+      <tr><td>Reference-drift CI</td><td>Written, staged at <code>docs/ci/reference-drift.yml</code>, not installed. Installing it needs a token with the <code>workflow</code> scope.</td></tr>
     </tbody>
   </table>
 
+  <h2>Never verified against a live project</h2>
+  <p>Every test in this repository runs against loopback stubs and vendored documents.
+  That is a deliberate trade: it makes the suite deterministic, offline, and honest about
+  what it checks. It also means no request in this codebase has been answered by CES
+  itself. The URLs, verbs, and enum spellings match Google's own machine-readable
+  description of the API — which is a strong claim, and a different claim from
+  "this works against production".</p>
+
   <h2>Rough remaining effort</h2>
-  <p>The live transport MVP is done. Approximate follow-on:</p>
+  <p>The live transport, credentials, and streaming are done. Approximate follow-on:</p>
   <ul>
-    <li>1-2 weeks to wire the CLI commands onto <code>CesHttpClient</code> and add ADC auth</li>
-    <li>3-5 months for Python CLI/library parity on real RPCs</li>
+    <li>2-4 weeks to move the catalog commands onto <code>CesHttpClient</code> and add operation polling and retries</li>
+    <li>2-4 months for typed request/response bodies across the resources that matter</li>
     <li>5-8 months for release-quality packaging, multi-region, and eval-on-Vertex</li>
   </ul>
 

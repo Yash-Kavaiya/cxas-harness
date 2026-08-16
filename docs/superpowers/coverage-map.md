@@ -15,6 +15,11 @@ Source of truth for "done" of the spec/plan set: this file plus the files it nam
 | 4 | Migration and eval-run cleanup | `docs/superpowers/specs/2026-08-15-migration-lifecycle-design.md` | `docs/superpowers/plans/2026-08-15-migration-lifecycle.md` |
 | 5 | Packaging, docs, and release | `docs/superpowers/specs/2026-08-15-packaging-cli-ci-design.md` | `docs/superpowers/plans/2026-08-15-packaging-cli-ci.md` |
 
+Live transport, credential resolution, and streaming are specified in
+`docs/superpowers/specs/2026-08-16-live-transport-auth-streaming-design.md` and
+planned in `docs/superpowers/plans/2026-08-16-live-transport-auth-streaming.md`.
+That plan's Phase 5 lists what it deliberately left undone.
+
 Gauntlet Loop is implemented as repo tooling under `gauntlet/`, specified in
 `docs/superpowers/specs/2026-08-15-discovery-benchmark-gauntlet-design.md` and
 planned in `docs/superpowers/plans/2026-08-15-discovery-benchmark-gauntlet.md`.
@@ -89,3 +94,31 @@ it could never fail. It did not, for example, notice that
 `EvaluationRunState` declared `PENDING`/`SUCCEEDED`/`FAILED` where CES declares
 `QUEUED`/`COMPLETED`/`ERROR`. The Python parity manifest is retained as a
 CLI-shape reference only.
+
+### Two coverage numbers, never one
+
+Method coverage is reported as a pair, and the pair is not collapsible:
+
+| | Source | Claim |
+|---|---|---|
+| Addressable | `tools/generate_methods.py`, from `reference/ces/` | a request can be built, signed, and sent |
+| Modelled | hand-written `MODELLED` in `cxas-core` | this workspace has a type for the resource and an opinion about its failures |
+
+Reporting only the generated figure would let the project claim complete CES
+coverage for the cost of running a script. The gap between the two is the part
+that takes judgement, so the gap is what gets published.
+
+Because the table is generated from the reference, the parity test comparing
+them is a staleness check rather than an independent verification. That is
+stated plainly rather than implied: the failure it catches is a reference
+refreshed without a table regenerated, which is the sequence that actually
+happens, and nothing else in the workspace would notice it.
+
+### Credentials
+
+A credential that cannot be used is an error at the precedence it was found,
+never a reason to try the next source. Falling through from a service-account
+key to the developer's own `gcloud` login would send the request as the wrong
+principal and make the resulting 403 point at the wrong problem. Service-account
+key signing and workload-identity federation are unimplemented and say so by
+name.
