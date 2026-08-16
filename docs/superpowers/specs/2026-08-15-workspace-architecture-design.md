@@ -1,7 +1,7 @@
 # Phase 1 — Workspace Architecture Design
 
 **Date:** 2026-08-15
-**Status:** Approved from `PRD.md.txt` and `dev.md.txt`
+**Status:** Approved from the product briefs (retired 2026-08-16; requirements restated here)
 **Product:** `cxas-harness`
 **Phase:** 1 of 5 — crate architecture
 **Depends on:** `docs/superpowers/specs/2026-08-15-parity-contract-design.md`

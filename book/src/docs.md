@@ -14,7 +14,7 @@ That site is the full user and contributor documentation for `cxas-harness`. Thi
 | Superpowers specs | `docs/superpowers/specs/` |
 | Superpowers plans | `docs/superpowers/plans/` |
 | Coverage map | `docs/superpowers/coverage-map.md` |
-| Product input | `PRD.md.txt`, `dev.md.txt` |
+| Issue provenance | `GoogleCloudPlatform/cxas-scrapi` at SHA `4f7b43ca6adda0acad95a7e3654eee4e2ed1438c` |
 
 ## CLI contract
 

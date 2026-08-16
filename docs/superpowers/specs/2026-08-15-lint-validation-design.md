@@ -1,7 +1,7 @@
 # Phase 3 — Lint and Validation Engine Design
 
 **Date:** 2026-08-15
-**Status:** Approved from `PRD.md.txt` and `dev.md.txt`
+**Status:** Approved from the product briefs (retired 2026-08-16; requirements restated here)
 **Product:** `cxas-harness`
 **Phase:** 3 of 5 — lint and validation
 **Depends on:** Phase 0 parity (`lint`, `llm-lint` commands), Phase 1 `cxas-state` / `cxas-utils`

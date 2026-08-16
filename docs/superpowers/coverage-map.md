@@ -1,6 +1,14 @@
 # Superpowers coverage map
 
-Maps every `PRD.md.txt` / `dev.md.txt` development phase and every cataloged `GoogleCloudPlatform/cxas-scrapi` open issue (25 as of 2026-08-15, SHA `4f7b43ca6adda0acad95a7e3654eee4e2ed1438c`) onto a design spec section and an implementation-plan task.
+Maps every development phase and every cataloged `GoogleCloudPlatform/cxas-scrapi` open issue (25 as of 2026-08-15, SHA
+`4f7b43ca6adda0acad95a7e3654eee4e2ed1438c`) onto a design spec section and an
+implementation-plan task.
+
+The phase requirements originally came from two product briefs checked into the
+repo root. Those were retired on 2026-08-16: every requirement they carried is
+restated in the spec it produced, so the copies had become a second source of
+truth that nothing kept in step. Issue provenance is the upstream tracker at the
+SHA above.
 
 Source of truth for "done" of the spec/plan set: this file plus the files it names.
 
@@ -43,7 +51,7 @@ It is non-runtime: nothing under `gauntlet/` is a Cargo workspace member.
 | RAII snapshot cleanup | Phase 4 **Components** `SnapshotGuard` | Phase 4 Task 1 |
 | Tool-deletion sync via state hash | Phase 4 **Components** `ToolSync` | Phase 4 Task 2 |
 | Non-interactive migration default + TUI feature | Phase 4 **Components** `MigrationPipeline` | Phase 4 Task 3 |
-| Static binary / cargo-dist | Phase 5 **Components** Packaging | Phase 5 Task 5 (`dist-workspace.toml`) |
+| Static binary / cargo-dist | Phase 5 **Components** Packaging | Phase 5 Task 5 — **config withdrawn 2026-08-16**, see below |
 | mdBook Docs/Examples/Agent Skills/Core SDK | Phase 5 **Components** Docs | Phase 5 Task 5 |
 | `cxas actions init` GitHub Actions | Phase 5 **Components** `actions init` | Phase 5 Task 2 |
 | Machine-first CLI JSON + stable exits | Phase 5 **Components** `cxas-cli` | Phase 5 Task 1 |
@@ -122,3 +130,15 @@ key to the developer's own `gcloud` login would send the request as the wrong
 principal and make the resulting 403 point at the wrong problem. Service-account
 key signing and workload-identity federation are unimplemented and say so by
 name.
+
+## Withdrawn artifacts
+
+| Artifact | Withdrawn | Why |
+|---|---|---|
+| `PRD.md.txt`, `dev.md.txt` | 2026-08-16 | Product briefs. Every requirement is restated in the spec it produced; keeping the raw copies created a second source of truth that nothing verified. Issue provenance is now the upstream tracker at the recorded SHA. |
+| `dist-workspace.toml` | 2026-08-16 | `cargo-dist` target list for a release job this repository does not have. Config for a pipeline that never runs describes an intention, not a fact. Restore it alongside the release workflow. |
+| `renovate.json` | 2026-08-16 | `{ "extends": ["config:recommended"] }`, inert unless the Renovate GitHub app is installed on the repository. It was not. |
+
+Withdrawing an artifact does not withdraw the requirement behind it. The Phase 5
+packaging requirement is still open, and `docs-site/limits.html` still lists
+release packaging among the things this checkout does not do.

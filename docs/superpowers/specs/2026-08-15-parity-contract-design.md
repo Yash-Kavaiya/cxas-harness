@@ -1,7 +1,7 @@
 # Phase 0 — Foundations and Parity Contract Design
 
 **Date:** 2026-08-15
-**Status:** Approved from `PRD.md.txt` and `dev.md.txt` (no additional product Q&A)
+**Status:** Approved from the product briefs (retired 2026-08-16; requirements restated here) (no additional product Q&A)
 **Product:** `cxas-harness` (Rust rewrite of Python `cxas-scrapi`)
 **Phase:** 0 of 5 — foundations and parity contract
 **Grounding snapshot:** `GoogleCloudPlatform/cxas-scrapi` SHA `4f7b43ca6adda0acad95a7e3654eee4e2ed1438c` (25 open issues as of 2026-08-15)

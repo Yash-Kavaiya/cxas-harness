@@ -1,5 +1,14 @@
 # Phase 5 Packaging, CLI, Docs, and Release Implementation Plan
 
+> **Withdrawn 2026-08-16.** `dist-workspace.toml` and `renovate.json` were
+> removed from the repository. The `cargo-dist` target list configured a release
+> job that does not exist here, and the Renovate stub is inert unless the GitHub
+> app is installed on the repository, which it is not. The prose below is left as
+> the dated record of what this phase decided; the packaging requirement itself
+> remains open and is listed on `docs-site/limits.html`. See the withdrawn-artifacts
+> table in `docs/superpowers/coverage-map.md`.
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship the machine-first `cxas` CLI, Actions workflow generation, `diff`/`state`/`deploy`/`trace --raw`, mdBook sidebar structure, and a `deny.toml` dependency policy.

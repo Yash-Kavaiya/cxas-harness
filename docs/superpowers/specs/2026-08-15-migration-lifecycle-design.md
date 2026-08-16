@@ -1,7 +1,7 @@
 # Phase 4 — Migration and Eval-Run Lifecycle Design
 
 **Date:** 2026-08-15
-**Status:** Approved from `PRD.md.txt` and `dev.md.txt`
+**Status:** Approved from the product briefs (retired 2026-08-16; requirements restated here)
 **Product:** `cxas-harness`
 **Phase:** 4 of 5 — migration and eval-run cleanup
 **Depends on:** Phase 0 migration types, Phase 1 `cxas-core` / `cxas-state`, Phase 3 lint registry (optional post-deploy call)

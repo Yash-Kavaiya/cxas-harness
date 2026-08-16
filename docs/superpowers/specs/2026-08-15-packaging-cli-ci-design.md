@@ -1,7 +1,16 @@
 # Phase 5 — Packaging, CLI, Docs, and Release Design
 
+> **Withdrawn 2026-08-16.** `dist-workspace.toml` and `renovate.json` were
+> removed from the repository. The `cargo-dist` target list configured a release
+> job that does not exist here, and the Renovate stub is inert unless the GitHub
+> app is installed on the repository, which it is not. The prose below is left as
+> the dated record of what this phase decided; the packaging requirement itself
+> remains open and is listed on `docs-site/limits.html`. See the withdrawn-artifacts
+> table in `docs/superpowers/coverage-map.md`.
+
+
 **Date:** 2026-08-15
-**Status:** Approved from `PRD.md.txt` and `dev.md.txt`
+**Status:** Approved from the product briefs (retired 2026-08-16; requirements restated here)
 **Product:** `cxas-harness`
 **Phase:** 5 of 5 — packaging, docs, and release
 **Depends on:** Phases 0–4 crates (`cxas-core`, `cxas-evals`, `cxas-lint`, `cxas-migration`, `cxas-state`, `cxas-parity`)
