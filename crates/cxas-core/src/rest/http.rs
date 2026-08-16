@@ -21,6 +21,8 @@
 
 use super::method::{ApiVersion, MethodSpec};
 use super::request::{status_to_error, RequestBuilder, RestRequest};
+use super::stream::JsonStreamDecoder;
+use crate::auth::TokenProvider;
 use crate::CoreError;
 use std::collections::BTreeMap;
 
@@ -28,12 +30,25 @@ use std::collections::BTreeMap;
 pub struct CesHttpClient {
     builder: RequestBuilder,
     http: reqwest::Client,
+    /// Mints and refreshes tokens. Absent when the caller supplied a fixed
+    /// token on the builder, which is what the tests and short scripts do.
+    tokens: Option<TokenProvider>,
 }
 
 impl CesHttpClient {
-    /// Build a client against the default CES endpoint.
+    /// Build a client against the default CES endpoint with a fixed token.
     pub fn new(token: impl Into<String>) -> Result<Self, CoreError> {
         Self::with_builder(RequestBuilder::default().with_token(token))
+    }
+
+    /// Build a client that resolves and refreshes its own credential.
+    ///
+    /// This is the constructor a long-running process wants: a fixed token
+    /// expires after an hour, and the failure looks like a permissions problem
+    /// rather than an expiry.
+    pub fn discover(explicit_token: Option<&str>) -> Result<Self, CoreError> {
+        let provider = TokenProvider::discover(explicit_token)?;
+        Ok(Self::with_builder(RequestBuilder::default())?.with_tokens(provider))
     }
 
     /// Build a client against a specific endpoint, for tests or a private
@@ -42,7 +57,17 @@ impl CesHttpClient {
         let http = reqwest::Client::builder()
             .build()
             .map_err(|e| CoreError::Transport(format!("building HTTP client: {e}")))?;
-        Ok(Self { builder, http })
+        Ok(Self {
+            builder,
+            http,
+            tokens: None,
+        })
+    }
+
+    /// Take the authorization header from `provider` instead of the builder.
+    pub fn with_tokens(mut self, provider: TokenProvider) -> Self {
+        self.tokens = Some(provider);
+        self
     }
 
     pub fn endpoint(&self) -> &str {
@@ -67,22 +92,7 @@ impl CesHttpClient {
 
     /// Send an already-built request.
     pub async fn send(&self, request: &RestRequest) -> Result<String, CoreError> {
-        let method = reqwest::Method::from_bytes(request.http_method.as_bytes())
-            .map_err(|e| CoreError::Transport(format!("bad HTTP method: {e}")))?;
-
-        let mut builder = self.http.request(method, &request.url);
-        for (name, value) in &request.headers {
-            builder = builder.header(name, value);
-        }
-        if let Some(body) = &request.body {
-            builder = builder.body(body.clone());
-        }
-
-        let response = builder
-            .send()
-            .await
-            .map_err(|e| CoreError::Transport(format!("sending request: {e}")))?;
-
+        let response = self.dispatch(request).await?;
         let status = response.status().as_u16();
         let text = response
             .text()
@@ -94,6 +104,82 @@ impl CesHttpClient {
         } else {
             Err(status_to_error(status, &text))
         }
+    }
+
+    /// Issue `spec` and deliver each message as it arrives.
+    ///
+    /// `on_message` is called once per complete JSON value, never with a
+    /// fragment. Returns how many messages were delivered.
+    ///
+    /// A stream that ends mid-message is an error rather than a short result:
+    /// a dropped connection and a finished conversation are indistinguishable
+    /// to the caller otherwise, and the difference is the whole point.
+    pub async fn stream<F>(
+        &self,
+        spec: &MethodSpec,
+        params: &BTreeMap<String, String>,
+        query: &BTreeMap<String, String>,
+        body: Option<String>,
+        mut on_message: F,
+    ) -> Result<usize, CoreError>
+    where
+        F: FnMut(&str),
+    {
+        let request = self.builder.build(spec, params, query, body)?;
+        let mut response = self.dispatch(&request).await?;
+
+        let status = response.status().as_u16();
+        if !(200..300).contains(&status) {
+            let text = response.text().await.unwrap_or_default();
+            return Err(status_to_error(status, &text));
+        }
+
+        let mut decoder = JsonStreamDecoder::new();
+        let mut delivered = 0usize;
+        while let Some(chunk) = response
+            .chunk()
+            .await
+            .map_err(|e| CoreError::Transport(format!("reading stream: {e}")))?
+        {
+            for message in decoder.push(&chunk) {
+                delivered += 1;
+                on_message(&message);
+            }
+        }
+        if let Some(trailing) = decoder.finish()? {
+            delivered += 1;
+            on_message(&trailing);
+        }
+
+        Ok(delivered)
+    }
+
+    /// Apply headers and credentials, then put the request on the wire.
+    async fn dispatch(&self, request: &RestRequest) -> Result<reqwest::Response, CoreError> {
+        let method = reqwest::Method::from_bytes(request.http_method.as_bytes())
+            .map_err(|e| CoreError::Transport(format!("bad HTTP method: {e}")))?;
+
+        let mut builder = self.http.request(method, &request.url);
+        for (name, value) in &request.headers {
+            // A provider-minted token replaces whatever the builder carried,
+            // rather than sending two authorization headers.
+            if self.tokens.is_some() && name.eq_ignore_ascii_case("authorization") {
+                continue;
+            }
+            builder = builder.header(name, value);
+        }
+        if let Some(provider) = &self.tokens {
+            let token = provider.token().await?;
+            builder = builder.header("authorization", format!("Bearer {token}"));
+        }
+        if let Some(body) = &request.body {
+            builder = builder.body(body.clone());
+        }
+
+        builder
+            .send()
+            .await
+            .map_err(|e| CoreError::Transport(format!("sending request: {e}")))
     }
 
     /// Which surface a method targets, for callers that log or route on it.

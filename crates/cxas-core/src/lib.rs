@@ -13,6 +13,7 @@
 // limitations under the License.
 
 mod apps;
+pub mod auth;
 mod config;
 mod deployments;
 mod error;
@@ -23,14 +24,18 @@ pub mod parity_table;
 mod transport;
 
 pub use apps::{AppName, Apps};
+#[cfg(feature = "rest")]
+pub use auth::TokenProvider;
+pub use auth::{resolve as resolve_credential, AdcKind, AuthorizedUser, CredentialSource};
 pub use config::{ClientConfig, Credentials};
 pub use deployments::{Deployment, DeploymentName, Deployments};
 pub use error::CoreError;
 pub use evaluations::{Evaluations, QuotaKind};
 pub use location::Location;
 pub use rest::{
-    api_version_of, expand_path, method_spec, status_to_error, ApiVersion, AppRef, LocationRef,
-    MethodSpec, RequestBuilder, RestRequest, UrlError, DEFAULT_ENDPOINT, METHODS,
+    api_version_of, expand_path, method_spec, resolve_method, status_to_error, ApiVersion, AppRef,
+    JsonStreamDecoder, LocationRef, MethodSpec, RequestBuilder, RestRequest, UrlError, DEFAULT_ENDPOINT, METHODS,
+    MODELLED,
 };
 #[cfg(feature = "rest")]
 pub use rest::CesHttpClient;
