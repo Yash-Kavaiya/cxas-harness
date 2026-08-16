@@ -22,14 +22,18 @@
 #[cfg(feature = "rest")]
 mod http;
 mod method;
+mod method_table;
 mod names;
 mod request;
+mod stream;
 mod url;
 
 #[cfg(feature = "rest")]
 pub use http::CesHttpClient;
-pub use method::{method_spec, ApiVersion, MethodSpec, METHODS};
+pub use method::{method_spec, resolve_method, ApiVersion, MethodSpec, MODELLED};
+pub use method_table::METHODS;
 pub use names::{AppRef, LocationRef};
+pub use stream::JsonStreamDecoder;
 pub use request::{
     api_version_of, status_to_error, RequestBuilder, RestRequest, DEFAULT_ENDPOINT,
 };

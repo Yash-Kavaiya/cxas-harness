@@ -18,9 +18,10 @@
 //! contains strings that same YAML declares, so it can never fail. These
 //! assertions are made against Google's vendored discovery documents instead.
 
-use cxas_core::{ApiVersion, METHODS};
+use cxas_core::{ApiVersion, METHODS, MODELLED};
 use cxas_discovery::Discovery;
 use cxas_proto::enum_registry::REGISTERED_ENUMS;
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 
 fn reference(version: &str) -> PathBuf {
@@ -139,25 +140,109 @@ fn evaluation_methods_are_never_declared_against_v1() {
 }
 
 #[test]
-fn coverage_report_counts_implemented_methods() {
+fn declared_table_matches_discovery_exactly() {
+    // The table is generated from these documents, so this is a staleness
+    // check, not an independent verification -- and staleness is the failure
+    // that actually happens. `tools/refresh_reference.py` can pull a newer
+    // revision without anyone re-running `tools/generate_methods.py`, at which
+    // point the table describes an API that is no longer the pinned one.
+    //
+    // Checked in both directions on purpose. Only checking that declared
+    // methods exist upstream would pass a table that dropped half of CES.
+    for (label, version) in [("v1", ApiVersion::V1), ("v1beta", ApiVersion::V1Beta)] {
+        let doc = load(label);
+        let declared: BTreeSet<&str> = METHODS
+            .iter()
+            .filter(|m| m.api_version == version)
+            .map(|m| m.id)
+            .collect();
+        let upstream: BTreeSet<&str> = doc.methods().map(|m| m.id.as_str()).collect();
+
+        let missing: Vec<&&str> = upstream.difference(&declared).collect();
+        let invented: Vec<&&str> = declared.difference(&upstream).collect();
+
+        assert!(
+            missing.is_empty() && invented.is_empty(),
+            "{label} method table is stale -- re-run tools/generate_methods.py
+               missing from the table: {missing:?}
+               absent from discovery:  {invented:?}"
+        );
+    }
+}
+
+#[test]
+fn modelled_methods_are_addressable() {
+    // MODELLED is hand-maintained; the table is generated. A modelled id that
+    // no longer resolves means CES renamed or withdrew something this
+    // workspace still claims to model.
+    let mut unresolved = Vec::new();
+    for id in MODELLED {
+        if cxas_core::resolve_method(id).is_none() {
+            unresolved.push(*id);
+        }
+    }
+    assert!(
+        unresolved.is_empty(),
+        "modelled methods that CES no longer declares: {unresolved:?}"
+    );
+
+    let unique: BTreeSet<&&str> = MODELLED.iter().collect();
+    assert_eq!(
+        unique.len(),
+        MODELLED.len(),
+        "MODELLED lists the same method twice, which would inflate the coverage report"
+    );
+}
+
+#[test]
+fn every_method_declares_the_parameters_its_path_needs() {
+    // A path template naming a variable the caller cannot know about is a
+    // request that can only fail at expansion time.
+    for spec in METHODS {
+        let params = spec.required_params();
+        assert!(
+            !params.is_empty(),
+            "{} has no template parameters, which no CES method does",
+            spec.id
+        );
+        for name in params {
+            assert!(
+                !name.is_empty(),
+                "{} has an empty template parameter in {}",
+                spec.id,
+                spec.path
+            );
+        }
+    }
+}
+
+#[test]
+fn coverage_report_counts_addressable_and_modelled_separately() {
     // Reports, never gates. A pass/fail threshold can be satisfied by deleting
     // the metric; a printed number cannot.
+    //
+    // Two numbers, because they mean different things. Addressable coverage is
+    // generated and therefore cheap -- it says a request can be built and sent.
+    // Modelled coverage is hand-written and says this workspace has an opinion
+    // about what the resource is and what failure means for it.
     let v1 = load("v1");
     let v1beta = load("v1beta");
     let (n1, nbeta) = (v1.methods().count(), v1beta.methods().count());
 
-    let impl_v1 = METHODS
+    let addr_v1 = METHODS
         .iter()
         .filter(|m| m.api_version == ApiVersion::V1)
         .count();
-    let impl_beta = METHODS
+    let addr_beta = METHODS
         .iter()
         .filter(|m| m.api_version == ApiVersion::V1Beta)
         .count();
 
     println!(
-        "CES-COVERAGE v1={impl_v1}/{n1} v1beta={impl_beta}/{nbeta} total={}/{}          v1_revision={} v1beta_revision={}",
-        impl_v1 + impl_beta,
+        "CES-COVERAGE addressable v1={addr_v1}/{n1} v1beta={addr_beta}/{nbeta} total={}/{} modelled={}/{} v1_revision={} v1beta_revision={}",
+        addr_v1 + addr_beta,
+        n1 + nbeta,
+        MODELLED.len(),
         n1 + nbeta,
         v1.revision(),
         v1beta.revision()
