@@ -5,10 +5,16 @@ edition = "2021"
 license = "Apache-2.0"
 rust-version = "1.80"
 
+[features]
+default = []
+# Pulls in the HTTP stack. Everything else in `rest` is pure and always built.
+rest = ["dep:reqwest"]
+
 [dependencies]
 async-trait = "0.1"
 bytes = "1"
 futures = "0.3"
+reqwest = { version = "0.12", optional = true, default-features = false, features = ["json", "rustls-tls"] }
 thiserror = "2"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 

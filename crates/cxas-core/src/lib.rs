@@ -18,6 +18,7 @@ mod deployments;
 mod error;
 mod evaluations;
 mod location;
+pub mod rest;
 pub mod parity_table;
 mod transport;
 
@@ -27,6 +28,12 @@ pub use deployments::{Deployment, DeploymentName, Deployments};
 pub use error::CoreError;
 pub use evaluations::{Evaluations, QuotaKind};
 pub use location::Location;
+pub use rest::{
+    api_version_of, expand_path, method_spec, status_to_error, ApiVersion, AppRef, LocationRef,
+    MethodSpec, RequestBuilder, RestRequest, UrlError, DEFAULT_ENDPOINT, METHODS,
+};
+#[cfg(feature = "rest")]
+pub use rest::CesHttpClient;
 pub use transport::{
     CesTransport, ChannelSettings, ExportHandle, ExportRequest, NoopTransport, RecordingTransport,
 };

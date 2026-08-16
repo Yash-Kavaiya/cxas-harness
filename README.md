@@ -25,7 +25,12 @@ cargo run -p cxas-cli -- --help
 | Benchmark | Google's own CES discovery documents, vendored at a pinned revision — 66 methods in v1, 104 in v1beta |
 | Gauntlet Loop | Builder/blind-critic loop under `gauntlet/`, scored against that benchmark |
 
-This checkout talks to a **local catalog and mocks**, not live CES/GCP. Location is never defaulted to `"global"`.
+`cxas-core` speaks the real CES REST surface: **35 of 170 methods** are declared and
+verified against the vendored discovery documents, with an HTTP client behind the
+`rest` feature. The CLI still reads and writes a local catalog at `.cxas/catalog.json`;
+wiring the commands onto the live client is the next phase. Location is never defaulted
+to `"global"` — every CES path template embeds `projects/*/locations/*`, so a resource
+name cannot be built without one.
 
 ## Environment chart
 
@@ -46,14 +51,14 @@ flowchart TB
     end
 
     subgraph workspace [Rust workspace]
-        Core["cxas-core<br/>Location, Apps, Deployments, QuotaKind"]
+        Core["cxas-core<br/>Location, REST registry, HTTP client"]
         State["cxas-state<br/>hash / diff / cascading profiles"]
         Lint["cxas-lint<br/>V-ROOT + 60+ rules"]
         Evals["cxas-evals<br/>TurnCursor, BidiSession, AudioScorer"]
         Mig["cxas-migration<br/>SnapshotGuard, ToolSync, DFCX pipeline"]
         Utils["cxas-utils<br/>paginate + boolean templates"]
-        Parity["cxas-parity<br/>frozen Python surface manifest"]
-        Proto["cxas-proto<br/>EvaluationRunState::Unknown"]
+        Parity["cxas-parity<br/>discovery contract + CLI-shape reference"]
+        Proto["cxas-proto<br/>EvaluationRunState, real wire values"]
     end
 
     CLI --> Core
@@ -68,13 +73,13 @@ flowchart TB
     Mig --> State
     Core --> Parity
 
-    subgraph future [Not in this checkout]
-        CES["CES / Dialogflow CX APIs"]
+    subgraph external [Google Cloud]
+        CES["CES REST API<br/>v1 + v1beta"]
         Vertex["Vertex / Gemini"]
         GCP["GCP project + region"]
     end
 
-    Core -.->|"future live transport"| CES
+    Core -->|"REST, 35/170 methods"| CES
     Evals -.->|"future STT / eval quota"| Vertex
     CES -.-> GCP
     Vertex -.-> GCP
@@ -87,17 +92,20 @@ flowchart TB
 ```text
 cxas-harness/
   crates/
-    cxas-parity      Phase 0  Frozen cxas-scrapi public surface (YAML)
-    cxas-proto       Phase 0  EvaluationRunState with Unknown(i32)  (#284)
-    cxas-core        Phase 1  Location, Apps export stream, QuotaKind, channels
+    cxas-parity      Phase 0  Python CLI-shape reference + discovery contract
+    cxas-discovery   Phase 6  Parser over the vendored CES discovery documents
+    cxas-proto       Phase 0  EvaluationRunState, real CES wire values  (#284)
+    cxas-core        Phase 1  Location, REST method registry, HTTP client
     cxas-utils       Phase 1  Pagination + boolean env templates     (#256)
     cxas-state       Phase 1  Content-addressed hash / diff / profiles (#131, #270)
     cxas-evals       Phase 2  Simulation cursor, bidi DTMF, audio     (#355, #345, #136)
     cxas-lint        Phase 3  Rule registry, V-ROOT, welcome/depver   (#86, #397)
     cxas-migration   Phase 4  Snapshot RAII, tool sync, DFCX pipeline (#168, #394)
     cxas-cli         Phase 5  cxas binary, actions, docs, deny.toml   (#55, #46, #54)
+  reference/ces/     Vendored CES discovery documents, pinned + sha256
+  gauntlet/          Builder / blind-critic loop (repo tooling, not shipped)
   docs/superpowers/  Design specs + implementation plans
-  parity/            Checked-in parity contract
+  parity/            Python CLI-shape reference
   schema/            Lint required-field schema
   book/              mdBook sidebar: Docs / Examples / Agent Skills / Core SDK
   docs-site/         Published documentation website (GitHub Pages)
@@ -197,13 +205,49 @@ Representative closers already tested in-process:
 
 | Issue | Closer |
 |---|---|
-| #284 | `EvaluationRunState::Unknown(i32)` never calls `.name` on a raw int |
+| #284 | `EvaluationRunState` matches the CES wire enum exactly, verified against discovery |
 | #401 | `Location` has no default; `"global"` only if explicit |
 | #355 | `TurnCursor` advances past the first utterance |
 | #345 | Bidi DTMF waits for the agent or times out |
 | #86 | `V-ROOT` fails lint when `root_agent` is missing or dangling |
 | #168 | `SnapshotGuard` deletes hillclimb snapshots on drop / panic / cancel |
 | #256 | Environment templates render JSON booleans |
+
+## Talking to CES
+
+`cxas-core` declares each CES method as data, and `cxas-parity` asserts every entry
+resolves in the vendored discovery document with the same verb and path template. A
+typo in a path fails the test suite instead of a live request.
+
+```text
+CES-COVERAGE v1=23/66 v1beta=12/104 total=35/170
+```
+
+Evaluations are registered only against `v1beta`, because the `v1` surface exposes no
+evaluation resources at all — a test enforces that, since declaring one on `v1` would
+build a URL that can only ever 404.
+
+Request construction is pure and always compiled: URL expansion, query encoding, header
+assembly, and status-to-error mapping are testable without a network or a credential.
+Only the send step needs the `rest` feature:
+
+```sh
+cargo test -p cxas-core --features rest
+```
+
+```rust
+use cxas_core::{method_spec, ApiVersion, AppRef, CesHttpClient, Location};
+
+let app = AppRef::new("my-project", Location::new("us-central1")?, "my-app")?;
+let client = CesHttpClient::new(oauth_token)?;
+let spec = method_spec("ces.projects.locations.apps.get", ApiVersion::V1).unwrap();
+let json = client.call(spec, &params, &query, None).await?;
+```
+
+Path templates use RFC 6570 reserved expansion: `{+name}` keeps the slashes in
+`projects/p/locations/us/apps/a` structural, while still encoding characters that could
+smuggle a query string into the URL. Getting that backwards yields a 404 that no type in
+the workspace would catch, so both directions are tested.
 
 ## Benchmark and the Gauntlet Loop
 

@@ -288,6 +288,7 @@ dependencies = [
  "bytes",
  "cxas-parity",
  "futures",
+ "reqwest",
  "thiserror",
  "tokio",
 ]
@@ -352,6 +353,7 @@ dependencies = [
 name = "cxas-parity"
 version = "0.1.0"
 dependencies = [
+ "cxas-core",
  "cxas-discovery",
  "cxas-proto",
  "serde",
