@@ -125,7 +125,7 @@ impl<T: SnapshotApi> Drop for SnapshotGuard<T> {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             self.api.delete_snapshot_blocking(&self.snapshot);
         }));
-        if let Err(_) = result {
+        if result.is_err() {
             register_failed_delete(
                 self.snapshot.clone(),
                 "delete_snapshot_blocking panicked".into(),

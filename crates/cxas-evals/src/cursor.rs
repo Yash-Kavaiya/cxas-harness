@@ -43,6 +43,10 @@ impl TurnCursor {
         }
     }
 
+    // Deliberately not `Iterator::next`: the borrow of `self` outlives the
+    // returned reference, which `Iterator` does not allow. Renaming it would
+    // make the cursor read worse to spare a lint.
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> Option<&UserInput> {
         let item = self.utterances.get(self.index)?;
         self.index += 1;

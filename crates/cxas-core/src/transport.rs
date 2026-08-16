@@ -30,6 +30,10 @@ pub struct ExportHandle {
 }
 
 impl ExportHandle {
+    // Named for what it does, not for the trait it resembles. `FromIterator`
+    // cannot be implemented here: the handle borrows nothing and yields chunks
+    // lazily, so there is no collection to build.
+    #[allow(clippy::should_implement_trait)]
     pub fn from_iter<I>(chunks: I) -> Self
     where
         I: IntoIterator<Item = Bytes>,

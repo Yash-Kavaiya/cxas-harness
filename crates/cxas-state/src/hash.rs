@@ -221,9 +221,6 @@ fn yaml_key_cmp(a: &serde_yaml::Value, b: &serde_yaml::Value) -> std::cmp::Order
 fn walk_err(err: walkdir::Error) -> StateError {
     match err.into_io_error() {
         Some(io) => StateError::Io(io),
-        None => StateError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "walkdir failed",
-        )),
+        None => StateError::Io(std::io::Error::other("walkdir failed")),
     }
 }

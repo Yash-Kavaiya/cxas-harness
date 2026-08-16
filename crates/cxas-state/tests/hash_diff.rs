@@ -92,10 +92,7 @@ fn link_dir_outside(src: &std::path::Path, dst: &std::path::Path) -> std::io::Re
                 if status.success() {
                     Ok(())
                 } else {
-                    Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "mklink /J failed",
-                    ))
+                    Err(std::io::Error::other("mklink /J failed"))
                 }
             }
         }

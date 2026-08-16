@@ -115,10 +115,10 @@ fn read_display_name(app_dir: &Path) -> String {
 fn sanitize_agent(raw: &str) -> String {
     let mut out = String::new();
     for ch in raw.chars() {
+        // Everything that is not alphanumeric becomes `_`, including `_`
+        // itself -- workflow job ids allow nothing else.
         if ch.is_ascii_alphanumeric() {
             out.push(ch.to_ascii_lowercase());
-        } else if ch == '_' {
-            out.push('_');
         } else {
             out.push('_');
         }
