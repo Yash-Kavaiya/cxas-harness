@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from gauntlet.evidence import build_bundle, render_bundle
+from gauntlet.evidence import _coverage, build_bundle, render_bundle
 
 AGENTS_DIR = Path(__file__).resolve().parent / "agents"
 
@@ -79,10 +79,52 @@ def _role_prompt(name, fallback):
     return path.read_text(encoding="utf-8") if path.exists() else fallback
 
 
-def run_piece(piece, config, repo_root, run_dir):
+class CallBudget:
+    """Counts agent invocations and refuses to hand out more than the cap.
+
+    Counted rather than priced: `agent_cmd` is any CLI reading stdin and
+    writing stdout, so no cost ever comes back and a dollar budget could only
+    have been decorative. A cap that is checked is worth more than a figure
+    that is not.
+    """
+
+    def __init__(self, limit):
+        self.limit = int(limit or 0)
+        self.used = 0
+
+    def spend(self):
+        """Claim one invocation. False when the cap is already reached."""
+        if self.limit and self.used >= self.limit:
+            return False
+        self.used += 1
+        return True
+
+    def exhausted(self):
+        return bool(self.limit) and self.used >= self.limit
+
+
+def rc_gate(config, repo_root):
+    """Whether a clean sweep also clears the release-candidate bar.
+
+    Separate from the per-piece verdict on purpose: every critic passing means
+    nine crates are individually defensible, which is not the same as the
+    workspace being releasable.
+    """
+    minimum = int(config.get("rc_coverage_min", 0) or 0)
+    coverage = _coverage(repo_root)
+    declared = coverage["v1_methods"] + coverage["v1beta_methods"]
+    return {
+        "required": minimum,
+        "declared": declared,
+        "release_candidate": declared >= minimum,
+    }
+
+
+def run_piece(piece, config, repo_root, run_dir, budget=None):
     """Build and critique a single piece until its critic passes or rounds run out."""
     repo_root, run_dir = Path(repo_root), Path(run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
+    budget = budget if budget is not None else CallBudget(config.get("max_agent_calls", 0))
 
     issues = config.get("issues", {}).get(piece, [])
     agent_cmd = config["agent_cmd"]
@@ -95,6 +137,22 @@ def run_piece(piece, config, repo_root, run_dir):
     verdict = {"verdict": "FAIL", "score": 0, "biggest_gap": "not yet run"}
 
     for round_no in range(1, max_rounds + 1):
+        # Two calls per round, so a round that cannot afford both is not
+        # started. Spending the builder call and then stopping would leave the
+        # crate edited and unreviewed, which is the worst of both.
+        if budget.limit and budget.limit - budget.used < 2:
+            verdict = {
+                "verdict": "FAIL",
+                "score": verdict["score"],
+                "biggest_gap": (
+                    f"agent-call cap reached ({budget.used}/{budget.limit}); "
+                    "raise max_agent_calls in gauntlet/config.toml to continue"
+                ),
+            }
+            history.append({"round": round_no, "budget_exhausted": True, **verdict})
+            print(f"[{piece}] stopped: {verdict['biggest_gap']}")
+            break
+
         gap = verdict["biggest_gap"] if round_no > 1 else ""
         builder_prompt = (
             f"{builder_role}\n\n"
@@ -102,6 +160,7 @@ def run_piece(piece, config, repo_root, run_dir):
             f"Assigned issues: {', '.join(issues) or 'none'}\n"
             + (f"Top-priority fix from the critic: {gap}\n" if gap else "")
         )
+        budget.spend()
         invoke_agent(agent_cmd, builder_prompt)
 
         # Evidence is collected by code, after the builder has finished, so the
@@ -116,6 +175,7 @@ def run_piece(piece, config, repo_root, run_dir):
             "Respond with JSON only: "
             '{"score": <0-100>, "verdict": "PASS"|"FAIL", "biggest_gap": "<one gap>"}'
         )
+        budget.spend()
         verdict = parse_verdict(invoke_agent(agent_cmd, critic_prompt))
         history.append({"round": round_no, **verdict})
 
@@ -140,13 +200,35 @@ def main(argv):
     config = load_config(here / "config.toml")
     pieces = [argv[0]] if argv else config["pieces"]
 
-    results = [run_piece(p, config, repo_root, here / "runs" / p) for p in pieces]
+    budget = CallBudget(config.get("max_agent_calls", 0))
+    results = [
+        run_piece(p, config, repo_root, here / "runs" / p, budget=budget) for p in pieces
+    ]
 
     failed = [r["piece"] for r in results if r["verdict"] != "PASS"]
     print(f"\n{len(results) - len(failed)}/{len(results)} pieces passed")
+    if budget.limit:
+        print(f"agent calls: {budget.used}/{budget.limit}")
     if failed:
         print(f"still failing: {', '.join(failed)}")
-    return 1 if failed else 0
+        if budget.exhausted():
+            print(
+                "the run stopped on the agent-call cap, not on a verdict -- "
+                "raise max_agent_calls in gauntlet/config.toml to go further"
+            )
+        return 1
+
+    gate = rc_gate(config, repo_root)
+    if not gate["release_candidate"]:
+        # Every critic passing is not the same as the workspace being
+        # releasable, so a clean sweep below the bar exits non-zero rather than
+        # reading as a release candidate.
+        print(
+            f"not a release candidate: {gate['declared']} CES methods declared, "
+            f"rc_coverage_min is {gate['required']}"
+        )
+        return 1
+    return 0
 
 
 if __name__ == "__main__":

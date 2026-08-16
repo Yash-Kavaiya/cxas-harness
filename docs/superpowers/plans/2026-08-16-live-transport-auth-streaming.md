@@ -257,8 +257,8 @@ genuinely not done, and each would change the claims on
       should make every caller reimplement.
 - [ ] Service-account key signing (RS256 JWT) and workload-identity federation
       (STS exchange). Both refuse by name today rather than falling through.
-- [ ] Run the Gauntlet Loop against a live model. `budget_usd` in
-      `gauntlet/config.toml` must be set first: nine crates times eight rounds
-      is not a free operation.
+- [ ] Run the Gauntlet Loop against a live model. Check `max_agent_calls` in
+      `gauntlet/config.toml` first: nine crates times eight rounds times two
+      calls per round is 144 invocations, and the cap ships at 40.
 - [ ] Install `docs/ci/reference-drift.yml` as a GitHub Action. Needs a token
       with the `workflow` scope; the checks run locally in the meantime.

@@ -130,12 +130,31 @@ python gauntlet/orchestrator.py cxas-proto  # one piece</code></pre>
   swapping providers is a one-line change.</p>
 
   <h3>Stop conditions</h3>
-  <p>The loop has no natural finish line, so the stop conditions are explicit:
-  <code>max_rounds</code> per piece, <code>budget_usd</code> overall, and a
-  release-candidate gate requiring every catalogued issue to have a reproduction test,
-  full enum parity against discovery, and coverage at or above
-  <code>rc_coverage_min</code>. On reaching the gate the orchestrator stops and hands back
-  for human review.</p>
+  <p>The loop has no natural finish line, so the stop conditions are explicit --
+  and, since 2026-08-16, actually enforced.</p>
+  <table>
+    <thead><tr><th>Setting</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><code>max_rounds</code></td><td>per-piece iteration cap</td></tr>
+      <tr><td><code>max_agent_calls</code></td><td>hard cap on total agent invocations for the run, shared across pieces; two per round</td></tr>
+      <tr><td><code>rc_coverage_min</code></td><td>a clean sweep below this many declared CES methods exits non-zero as "not a release candidate"</td></tr>
+    </tbody>
+  </table>
+  <p>Reaching a cap is a <code>FAIL</code>, never a pass: running out of budget is not
+  approval. A round that cannot afford both of its calls is not started at all, because
+  spending the builder call and then stopping would leave the crate edited and
+  unreviewed.</p>
+  <div class="callout note">
+    <strong>These were prose until 2026-08-16.</strong>
+    <code>budget_usd</code> and <code>rc_coverage_min</code> were both documented here as
+    stop conditions, and no code read either one. That is the same failure this page
+    argues against, in the tooling built to catch it -- and it mattered more than most,
+    because the control nobody had implemented was the one standing between a user and
+    144 model invocations. <code>budget_usd</code> could never have been honest:
+    <code>agent_cmd</code> is any CLI that reads stdin and writes stdout, so no provider
+    ever reports a cost back. It is replaced by a cap the loop can count, and
+    <code>test_stop_conditions.py</code> fails if a dollar figure reappears.
+  </div>
   <p>A round fails — never silently passes — when the critic returns unparseable output,
   returns nothing, or when the configured agent binary is missing or times out. Silence is
   not consent.</p>

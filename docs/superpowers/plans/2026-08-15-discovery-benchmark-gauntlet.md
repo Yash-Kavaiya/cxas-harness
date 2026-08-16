@@ -1,5 +1,15 @@
 # Discovery Benchmark and Gauntlet Loop Implementation Plan
 
+> **Amended 2026-08-16.** The `budget_usd` and `rc_coverage_min` stop conditions
+> described below were declared in `gauntlet/config.toml` and read by no code.
+> `budget_usd` could not be honest in this design -- `agent_cmd` is any
+> stdin/stdout CLI, so no cost is ever reported back -- and is replaced by
+> `max_agent_calls`, a cap on invocations the loop can actually count.
+> `rc_coverage_min` is now enforced after a clean sweep. Both are covered by
+> `gauntlet/tests/test_stop_conditions.py`. The prose below is the dated record
+> of what this phase specified.
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the self-graded parity contract with Google's canonical CES discovery documents as the benchmark, then build the builder/blind-critic Gauntlet Loop on top of it as repo tooling.

@@ -8,11 +8,18 @@ agent_cmd = "claude -p"
 # budget_usd are the deliberate stop conditions.
 max_rounds = 8
 
-# 0 means unlimited.
-budget_usd = 0
+# Hard cap on total agent invocations for one run, across every piece.
+# Each round costs two: one builder, one critic. 0 means unlimited.
+#
+# Not a dollar figure. `agent_cmd` is any CLI that reads stdin and writes
+# stdout, so no provider ever reports a cost back and a budget_usd knob could
+# only ever have been decorative. This counts what the loop can actually see.
+max_agent_calls = 40
 
-# Release-candidate gate: minimum implemented CES methods. Phase 3 raises this
-# to the gated subset (apps, agents, tools, v1beta evaluations), not all 170.
+# Release-candidate gate: minimum CES methods the vendored reference must
+# declare before a clean sweep counts as a release candidate. Checked after
+# every piece passes; a sweep that passes below this line is reported as
+# "not a release candidate" rather than as success.
 rc_coverage_min = 0
 
 # Pieces map onto existing crate boundaries.

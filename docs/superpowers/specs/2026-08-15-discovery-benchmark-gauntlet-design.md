@@ -1,5 +1,15 @@
 # Discovery benchmark and Gauntlet Loop — design
 
+> **Amended 2026-08-16.** The `budget_usd` and `rc_coverage_min` stop conditions
+> described below were declared in `gauntlet/config.toml` and read by no code.
+> `budget_usd` could not be honest in this design -- `agent_cmd` is any
+> stdin/stdout CLI, so no cost is ever reported back -- and is replaced by
+> `max_agent_calls`, a cap on invocations the loop can actually count.
+> `rc_coverage_min` is now enforced after a clean sweep. Both are covered by
+> `gauntlet/tests/test_stop_conditions.py`. The prose below is the dated record
+> of what this phase specified.
+
+
 Date: 2026-08-15
 Status: approved for planning
 Supersedes: the "no Gauntlet plan is required" ruling in `docs/superpowers/coverage-map.md`

@@ -58,12 +58,21 @@ and 78 passing tests could not see it.
 
 The loop has no natural finish line, so the stop conditions are explicit:
 
-- `max_rounds` — per-piece iteration cap
-- `budget_usd` — overall budget (`0` = unlimited)
-- an RC gate requiring every catalogued issue to have a repro test, full enum
-  parity against discovery, and coverage at or above `rc_coverage_min`
+| Setting | Effect |
+|---|---|
+| `max_rounds` | per-piece iteration cap |
+| `max_agent_calls` | hard cap on total agent invocations for the whole run, shared across pieces; two per round, `0` = unlimited |
+| `rc_coverage_min` | a clean sweep below this many declared CES methods exits non-zero as "not a release candidate" |
 
-On reaching the gate the orchestrator stops and hands back for human review.
+Reaching a cap is a `FAIL`, never a pass. A round that cannot afford both its
+calls is not started at all: spending the builder call and then stopping would
+leave the crate edited and unreviewed, which is the worst of both.
+
+There is deliberately no `budget_usd`. `agent_cmd` is any CLI that reads stdin
+and writes stdout, so no provider ever reports a cost back and a dollar figure
+here could only ever have been decorative — it was, until 2026-08-16, when it
+was replaced by a cap the loop can actually enforce. `test_stop_conditions.py`
+fails if `budget_usd` ever returns.
 
 ## Failure handling
 

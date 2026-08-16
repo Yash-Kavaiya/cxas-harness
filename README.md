@@ -28,29 +28,131 @@ Location is never defaulted to `"global"`. Every CES path template embeds `proje
 | Benchmark and Gauntlet Loop | [benchmark.html](https://yash-kavaiya.github.io/cxas-harness/benchmark.html) |
 | **What this does *not* do** | [limits.html](https://yash-kavaiya.github.io/cxas-harness/limits.html) |
 
-## Requirements
+## How it fits together
 
-- Rust 1.80+ (`rustc` / `cargo` on `PATH`, or `%USERPROFILE%\.cargo\bin` on Windows)
-- Git
-- Optional: `protoc` (without it, `cxas-proto` uses the hand-written `EvaluationRunState` wrapper)
+```mermaid
+flowchart TB
+    subgraph you [You]
+        Human["Operator, CI, or coding agent"]
+    end
 
-## Build and test
+    subgraph binary ["cxas binary"]
+        CLI["cxas<br/>JSON envelope, exit 0/1/2"]
+        Local["Local verbs<br/>init · lint · state · diff"]
+        Api["cxas api<br/>list · describe · call · stream"]
+        CLI --> Local
+        CLI --> Api
+    end
+
+    subgraph crates ["Rust workspace"]
+        Core["cxas-core<br/>Location · REST table · auth · streaming"]
+        Disc["cxas-discovery<br/>parser over the reference"]
+        Parity["cxas-parity<br/>the contract that can fail"]
+        Others["cxas-state · lint · evals<br/>migration · proto · utils"]
+    end
+
+    subgraph truth ["Ground truth"]
+        Ref[("reference/ces/<br/>pinned + sha256")]
+        Gen["tools/generate_methods.py"]
+        Table["METHODS<br/>170 specs, generated"]
+        Ref --> Gen --> Table --> Core
+        Ref --> Disc --> Parity
+        Table -.->|"checked both ways"| Parity
+    end
+
+    subgraph google ["Google Cloud"]
+        CES["CES REST API<br/>v1 + v1beta"]
+        ADC["ADC · metadata server · gcloud"]
+    end
+
+    Human --> CLI
+    Local --> Others
+    Api --> Core
+    Core -->|"170/170 addressable"| CES
+    Core -->|"token, cached + refreshed"| ADC
+
+    subgraph gauntlet ["gauntlet/ · repo tooling, never shipped"]
+        Build["Builder<br/>edits one crate"]
+        Ev["evidence.py<br/>deterministic, not an agent"]
+        Critic["Blind critic<br/>sees evidence only"]
+        Build --> Ev --> Critic
+        Critic -->|"one gap"| Build
+    end
+
+    Parity -.->|"coverage + revisions"| Ev
+    Others -.->|"cargo test · clippy"| Ev
+```
+
+The arrow that matters is `reference/ces/` into everything else. Nothing in this
+workspace decides what CES is; it reads that from Google's own machine-readable
+description, and `cxas-parity` fails the build when a claim and the reference
+disagree.
+
+## Install
+
+| Need | Version | Used for |
+|---|---|---|
+| Rust | 1.80+ | everything |
+| Git | any | cloning |
+| Python | 3.11+ | reference refresh, method-table generation, the Gauntlet Loop |
+| `protoc` | optional | without it `cxas-proto` uses the hand-written `EvaluationRunState` wrapper, which is the public API either way |
+
+Python 3.11 specifically, not 3.10 — the tooling reads TOML with the standard-library
+`tomllib`, which landed in 3.11.
+
+There is no published crate or release binary yet ([limits.html](https://yash-kavaiya.github.io/cxas-harness/limits.html) lists packaging among the things this checkout does not do), so install means build from source.
 
 ```sh
-cargo test --workspace          # 221 tests
-cargo clippy --workspace --all-targets
-cargo build -p cxas-cli
+git clone https://github.com/Yash-Kavaiya/cxas-harness.git
+cd cxas-harness
+
+cargo build --release -p cxas-cli
+./target/release/cxas --help
+```
+
+Put it on your `PATH`:
+
+```sh
+# Linux / macOS
+sudo install -m 755 target/release/cxas /usr/local/bin/cxas
 ```
 
 ```powershell
-# Windows PowerShell, if cargo is not on PATH
+# Windows PowerShell
+$dest = "$env:USERPROFILE\.local\bin"
+New-Item -ItemType Directory -Force $dest | Out-Null
+Copy-Item target\release\cxas.exe $dest
+$env:Path = "$dest;$env:Path"      # add to your profile to persist
+```
+
+If `cargo` itself is not found on Windows, it is installed but not on `PATH`:
+
+```powershell
 $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
 ```
 
-Python-side tooling — the reference refresher, the method-table generator, and the Gauntlet loop:
+### Verify the install
 
 ```sh
-python -m pytest tests gauntlet/tests -q   # 45 tests
+cargo test --workspace                     # 221 tests
+cargo clippy --workspace --all-targets     # clean
+python -m pytest tests gauntlet/tests -q   # 58 tests
+```
+
+None of these needs a Google Cloud project, a credential, or a network. If they pass, the checkout is sound.
+
+### Authenticate
+
+Only needed for `cxas api call` and `cxas api stream`. The ordinary path:
+
+```sh
+gcloud auth application-default login
+```
+
+Or hand it a token directly, which is what CI usually wants:
+
+```sh
+export CXAS_ACCESS_TOKEN="$(gcloud auth print-access-token)"
 ```
 
 ## Run the CLI
@@ -116,7 +218,58 @@ python tools/refresh_reference.py --check     # fail if upstream is newer
 python tools/generate_methods.py --check      # fail if the table is stale
 ```
 
-[`gauntlet/`](gauntlet/) builds on that benchmark: builder agents work per crate, each paired with a blind critic that sees only test output, clippy results, discovery coverage, and issue reproductions — never the source or the builder's reasoning. That blindness is enforced by a test, not by instruction. See [`gauntlet/README.md`](gauntlet/README.md).
+### Gauntlet Loop quickstart
+
+[`gauntlet/`](gauntlet/) is repo tooling and is **never shipped in the `cxas` binary** — nothing under it is a Cargo workspace member.
+
+Builder agents work one crate at a time, each paired with a blind critic that sees only test output, clippy results, discovery coverage, and issue reproductions — never the source, the diff, or the builder's reasoning. The evidence bundle is assembled by `gauntlet/evidence.py`, which is deterministic code rather than an agent, *after* the builder finishes, so the builder cannot shape what the critic sees. That blindness is enforced by a test, not by instruction.
+
+**Try it with no model and no cost first.** The stub agent returns canned verdicts, so the whole loop is verifiable without spending anything:
+
+```sh
+python -m pytest gauntlet/tests -q         # 32 tests
+```
+
+**Then run it for real.** Two things to know before you do:
+
+> **The builder edits your working tree.** It is an agent with write access to one crate at a time. Run it on a branch with everything committed, so `git diff` shows you exactly what it did.
+>
+> **It costs money.** Nine crates × up to eight rounds × two calls per round is 144 model invocations at the default settings. `max_agent_calls` is the cap that stops that; it ships at 40.
+
+```sh
+git switch -c gauntlet-run                 # never run this on a dirty tree
+
+# 1. Point it at any agent CLI that reads stdin and writes stdout.
+#    claude -p · gemini -p · codex exec — no provider SDK is imported.
+$EDITOR gauntlet/config.toml
+
+# 2. Start with one crate, not all nine.
+python gauntlet/orchestrator.py cxas-proto
+
+# 3. Read what the critic was actually shown, and what it said.
+cat gauntlet/runs/cxas-proto/evidence-round-1.md
+cat gauntlet/runs/cxas-proto/scorecard.json
+
+# 4. Review the builder's work yourself. The critic is blind, not infallible.
+git diff
+
+# 5. Only then, the full sweep.
+python gauntlet/orchestrator.py
+```
+
+Stop conditions, all enforced in code:
+
+| Setting | Effect |
+|---|---|
+| `max_rounds` | per-piece iteration cap (default 8) |
+| `max_agent_calls` | hard cap on total invocations for the run, shared across pieces (default 40) |
+| `rc_coverage_min` | a clean sweep below this many declared CES methods exits non-zero as "not a release candidate" |
+
+Hitting a cap is a `FAIL`, never a pass — running out of budget is not approval. A round that cannot afford both its calls is not started at all, since spending the builder call and then stopping would leave the crate edited and unreviewed.
+
+There is deliberately no `budget_usd`: `agent_cmd` is any stdin/stdout CLI, so no provider reports a cost back and a dollar figure could only ever have been decorative. A test fails if one reappears.
+
+Full design in [`gauntlet/README.md`](gauntlet/README.md).
 
 ## Honesty
 
