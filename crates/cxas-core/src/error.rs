@@ -22,6 +22,12 @@ pub enum CoreError {
     LocationHardcodedGlobalForbidden,
     #[error("CES transport: {0}")]
     Transport(String),
+    /// No usable credential, or one that could not be turned into a token.
+    ///
+    /// Separate from `Transport` because the remedy is different: a transport
+    /// failure is worth retrying, an auth failure is worth reading.
+    #[error("CES auth: {0}")]
+    Auth(String),
     #[error("resource not found: {0}")]
     NotFound(String),
     #[error("invalid resource name: {0}")]
