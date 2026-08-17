@@ -136,7 +136,7 @@ $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
 ```sh
 cargo test --workspace                     # 221 tests
 cargo clippy --workspace --all-targets     # clean
-python -m pytest tests gauntlet/tests -q   # 58 tests
+python -m pytest tests gauntlet/tests -q   # 77 tests
 ```
 
 None of these needs a Google Cloud project, a credential, or a network. If they pass, the checkout is sound.
@@ -227,7 +227,7 @@ Builder agents work one crate at a time, each paired with a blind critic that se
 **Try it with no model and no cost first.** The stub agent returns canned verdicts, so the whole loop is verifiable without spending anything:
 
 ```sh
-python -m pytest gauntlet/tests -q         # 32 tests
+python -m pytest gauntlet/tests -q         # 51 tests
 ```
 
 **Then run it for real.** Two things to know before you do:

@@ -17,7 +17,7 @@
 
   <h2>What works now</h2>
   <ul>
-    <li>Full Cargo workspace, <strong>221 Rust tests</strong> and <strong>45 Python tests</strong> passing, clippy clean</li>
+    <li>Full Cargo workspace, <strong>221 Rust tests</strong> and <strong>77 Python tests</strong> passing, clippy clean</li>
     <li><strong>All 170 CES REST methods addressable</strong>, from a table generated out of Google's discovery documents and checked against them in both directions</li>
     <li><strong>Application Default Credentials</strong>: environment token, authorized-user file, metadata server, or <code>gcloud</code> — cached and refreshed before expiry</li>
     <li><strong>Server streaming</strong>: <code>streamRunSession</code> delivered message by message, with truncation reported rather than rounded down</li>
@@ -69,6 +69,8 @@
       <tr><td><code>deploy</code> / <code>migrate</code></td><td>Local catalog + pipeline fixtures. No Cloud deploy job.</td></tr>
       <tr><td>Vertex STT / Gemini llm-lint</td><td>STT is a trait. <code>llm-lint</code> needs <code>--features llm</code> and a real key you supply later.</td></tr>
       <tr><td><code>run-session</code></td><td>Requires a TTY. Not for CI.</td></tr>
+      <tr><td>Issue-to-test linkage</td><td>The coverage map says all 25 cataloged issues have closing tests, and that mapping lives only in a markdown table. Of the 25, <strong>3</strong> have a test whose body actually cites the issue number; the other 22 are linked by prose alone. The Gauntlet evidence bundle now reports this per issue rather than asserting the claim.</td></tr>
+      <tr><td>Gauntlet builder isolation</td><td>The design specified a per-piece git worktree. It was never built, and the claim has been withdrawn rather than left standing: the builder edits your working tree, so run it on a branch. Out-of-scope edits are at least reported to the critic as paths.</td></tr>
       <tr><td>Gauntlet</td><td>Implemented under <code>gauntlet/</code>, never shipped in the binary. Not yet run against a live model.</td></tr>
       <tr><td>Reference-drift CI</td><td>Written, staged at <code>docs/ci/reference-drift.yml</code>, not installed. Installing it needs a token with the <code>workflow</code> scope.</td></tr>
     </tbody>

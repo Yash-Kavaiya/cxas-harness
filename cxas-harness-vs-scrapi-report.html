@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>cxas-harness vs cxas-scrapi — report</title>
+  <style>
+    :root {
+      --bg: #0f1217; --bg-elev: #171c24; --bg-soft: #1d2430; --line: #2a3342;
+      --text: #e7ecf3; --muted: #9aa6b8; --faint: #6d7a8d;
+      --accent: #d28a4c; --accent-2: #7ec8b3; --danger: #e07a6a; --ok: #8fbf7a;
+      --code-bg: #0b0e13; --max: 960px;
+      --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+      --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: var(--sans); margin: 0; color: var(--text); line-height: 1.65;
+      background:
+        radial-gradient(1200px 500px at 10% -10%, rgba(210,138,76,0.08), transparent 50%),
+        radial-gradient(900px 400px at 110% 0%, rgba(126,200,179,0.06), transparent 45%),
+        var(--bg);
+    }
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre { font-family: var(--mono); }
+    code { font-size: 0.9em; background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 0.08em 0.38em; }
+    pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; overflow-x: auto; }
+    pre code { border: 0; background: none; padding: 0; font-size: 0.84rem; line-height: 1.6; }
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 40px 24px 80px; }
+    .kicker { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 8px; }
+    h1 { font-size: 2.15rem; margin: 0 0 12px; letter-spacing: -0.02em; line-height: 1.2; }
+    h2 { font-size: 1.4rem; margin: 2.4rem 0 0.7rem; border-top: 1px solid var(--line); padding-top: 1.5rem; letter-spacing: -0.02em; }
+    h3 { font-size: 1.1rem; margin: 1.6rem 0 0.5rem; }
+    p.lead { font-size: 1.1rem; color: #c5cedb; margin-top: 0; }
+    p { margin: 0 0 1rem; }
+    ul, ol { margin: 0 0 1rem; padding-left: 1.25rem; }
+    li { margin: 0.3rem 0; }
+    table { width: 100%; border-collapse: collapse; margin: 0 0 1.2rem; font-size: 0.93rem; border: 1px solid var(--line); border-radius: 12px; display: block; overflow-x: auto; }
+    th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--faint); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; background: var(--bg-elev); white-space: nowrap; }
+    tr:last-child td { border-bottom: 0; }
+    .callout { border: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--bg-elev); border-radius: 10px; padding: 12px 14px; margin: 0 0 1.1rem; }
+    .callout.warn { border-left-color: var(--danger); }
+    .callout.ok { border-left-color: var(--ok); }
+    .callout.note { border-left-color: var(--accent-2); }
+    .callout strong { display: block; margin-bottom: 4px; }
+    .toc { background: var(--bg-elev); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin: 0 0 1.4rem; }
+    .toc h2 { all: unset; display: block; font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; font-weight: 650; }
+    .toc ol { margin: 0; padding-left: 1.1rem; }
+    .toc a { color: var(--muted); }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0 8px; }
+    .card { background: var(--bg-elev); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+    .card h3 { margin: 0 0 6px; font-size: 1rem; }
+    .card .num { font-family: var(--mono); font-size: 1.7rem; color: var(--accent); line-height: 1.2; }
+    .card p { color: var(--muted); margin: 0; font-size: 0.92rem; }
+    .badge { display: inline-block; font-family: var(--mono); font-size: 0.72rem; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: 4px; white-space: nowrap; }
+    .badge.ok { color: var(--ok); border-color: rgba(143,191,122,0.4); }
+    .badge.warn { color: #e8b07a; border-color: rgba(210,138,76,0.45); }
+    .badge.err { color: var(--danger); border-color: rgba(224,122,106,0.45); }
+    .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--faint); font-size: 0.88rem; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="kicker">Field report · 2026-08-16</p>
+  <h1>cxas-harness vs cxas-scrapi</h1>
+  <p class="lead">A machine-first Rust rewrite of Google's Python <code>cxas-scrapi</code> — compared command by command, graded on its Gauntlet Loop, and exercised end-to-end in a scratch workspace.</p>
+
+  <div class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#summary">Headline verdict</a></li>
+      <li><a href="#compare">Side-by-side comparison</a></li>
+      <li><a href="#tests">Full command test matrix (all commands, verified)</a></li>
+      <li><a href="#agents">Creating agents with cxas-harness</a></li>
+      <li><a href="#gauntlet">Is the Gauntlet Loop a proper implementation? + improvements</a></li>
+      <li><a href="#quickstart">Quickstart</a></li>
+    </ol>
+  </div>
+
+  <h2 id="summary">1 · Headline verdict</h2>
+  <div class="cards">
+    <div class="card"><h3>Commands tested</h3><div class="num">36</div><p>top-level commands enumerated, every one exercised; 50 invocations logged with exit codes</p></div>
+    <div class="card"><h3>CES surface</h3><div class="num">170/170</div><p>methods addressable from a generated table; 37 hand-modelled; v1=66, v1beta=104</p></div>
+    <div class="card"><h3>Gauntlet tests</h3><div class="num">32/32</div><p>the loop's own suite passes — blindness and stop conditions are enforced by tests, not prose</p></div>
+    <div class="card"><h3>Live transport</h3><div class="num">Verified</div><p><code>api call</code> reached Google's API gate (403 SERVICE_DISABLED) — auth, URL build, JSON envelope all real</p></div>
+  </div>
+
+  <div class="callout ok">
+    <strong>Bottom line.</strong> cxas-harness is a faithful, more disciplined re-implementation of cxas-scrapi's CLI surface — same command verbs, deterministic machine-first output, and a real (verified) REST transport — with the Gauntlet Loop as its quality engine. The loop's core design is sound and test-enforced; the gaps are in enforcement breadth (worktree isolation, issue-repro evidence, edit scope), listed in <a href="#gauntlet">section 5</a>.
+  </div>
+
+  <h2 id="compare">2 · Side-by-side comparison</h2>
+  <table>
+    <thead><tr><th>Dimension</th><th>cxas-harness (this repo)</th><th>cxas-scrapi (Google)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Language</strong></td><td>Rust, workspace of 10 crates (<code>cxas-core</code>, <code>cxas-cli</code>, <code>cxas-parity</code>, …)</td><td>Python 3.10+; single <code>cxas_scrapi</code> package on PyPI</td></tr>
+      <tr><td><strong>Positioning</strong></td><td>Machine-first: JSON by default, <code>--no-input</code> on, stable exit codes 0/1/2</td><td>Human + agent friendly: high-level Python classes, CLI ergonomics, Agent Skills for Gemini CLI / Claude Code / Antigravity</td></tr>
+      <tr><td><strong>CES API surface</strong></td><td><strong>170/170 methods addressable</strong> from a table generated out of Google's own discovery documents (v1=66, v1beta=104); 37 additionally modelled with workspace types</td><td>Wraps the official <code>google-cloud-ces</code> client; friendly classes for Apps, Agents, Tools, Guardrails, Deployments, Sessions, Evals</td></tr>
+      <tr><td><strong>Ground truth</strong></td><td>Vendored discovery JSON, pinned + sha256; <code>cxas-parity</code> fails the build when a claim and the reference disagree (both directions)</td><td>The official client library is the ground truth; docs at googlecloudplatform.github.io/cxas-scrapi</td></tr>
+      <tr><td><strong>CLI verbs (overlap)</strong></td><td><code>pull · push · create · delete · branch · apps · export · push-eval · run · test-tools · test-callbacks · ci-test · local-test · init-github-action · lint · llm-lint · init · insights · trace · migrate dfcx</code> — all present</td><td>Same verbs (scrapi documented: pull, push, create, delete, branch, apps, export, push-eval, run, test-tools, test-callbacks, test-single-callback, ci-test, local-test, init-github-action, lint, llm-lint, init, insights, trace)</td></tr>
+      <tr><td><strong>CLI verbs (harness-only)</strong></td><td><code>api</code> (list/describe/call/stream any of 170 methods), <code>state</code>, <code>diff</code>, <code>evals report</code>, <code>deployments</code>, <code>conversations</code>, <code>versions</code>, <code>local</code>, <code>agent / tool / guardrail</code> inspection</td><td>— (scrapi keeps its surface typed instead of generic)</td></tr>
+      <tr><td><strong>Auth</strong></td><td><code>--oauth-token</code> → <code>CXAS_ACCESS_TOKEN</code> → <code>GOOGLE_APPLICATION_CREDENTIALS</code> → ADC file → metadata server → <code>gcloud auth print-access-token</code>; tokens cached + refreshed. Service-account keys / WIF <strong>not</strong> implemented (by design, documented)</td><td>ADC everywhere; <code>creds_path</code> for explicit service-account JSON keys; WIF supported for GitHub Actions (<code>init-github-action</code>)</td></tr>
+      <tr><td><strong>Streaming</strong></td><td><code>streamRunSession</code> delivered message-by-message; truncated stream is an error, partial results still reported</td><td>Session streaming + conversation replay in <code>trace</code></td></tr>
+      <tr><td><strong>Linting</strong></td><td>Deterministic rule registry (V0xx rules: structure, naming, layout); <code>llm-lint</code> behind a <code>--features llm</code> flag</td><td><code>cxas lint</code> static, 60+ rules; <code>cxas llm-lint</code> Gemini semantic lint of instruction files (ships enabled)</td></tr>
+      <tr><td><strong>Evals</strong></td><td><code>evals report</code>, <code>export</code>, <code>push-eval</code>, <code>run --wait</code>; v1beta-only evaluation resources (enforced by test)</td><td>Golden tests, simulation runs, latency metrics, QA scorecards via Insights API</td></tr>
+      <tr><td><strong>Migration</strong></td><td><code>migrate dfcx</code> (Dialogflow CX → CXAS) — records target, real conversion in cxas-migration crate</td><td>Full migration tooling: agent generation from flows, artifact building</td></tr>
+      <tr><td><strong>Trace / Insights</strong></td><td>Both verbs present; offline stubs return empty turns / zero counters</td><td>Deep: list, report, Cloud Log merge, audio download + Gemini analysis, replay, aggregation</td></tr>
+      <tr><td><strong>Quality loop</strong></td><td><strong>Gauntlet Loop</strong>: builder + blind critic scored on deterministic evidence (never shipped in the binary)</td><td>Agent Skills + CI test lifecycle (<code>ci-test</code>, <code>local-test</code>, GitHub Actions generation)</td></tr>
+      <tr><td><strong>Packaging</strong></td><td>Not published yet — build from source (documented in README); static-binary goal</td><td><code>pip install cxas-scrapi</code>; uv-managed monorepo; MkDocs site</td></tr>
+      <tr><td><strong>Honesty posture</strong></td><td>Reports modelled vs addressable separately; limits page lists what it does <em>not</em> do; tests are offline-only</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note">
+    <strong>What the two numbers mean.</strong> <em>Addressable</em> (170/170) is generated from Google's discovery documents — a request can be built and sent. <em>Modelled</em> (37/170) is hand-written — the workspace has an opinion about what the resource is and what failure means for it. Reporting both separately is deliberate: reporting only coverage would be the same flattery the benchmark exists to argue against.
+  </div>
+
+  <h2 id="tests">3 · Full command test matrix</h2>
+  <p>Every top-level command from <code>cxas --help</code> was run against a scratch workspace
+  (<code>/tmp/cxas-demo</code>, catalog isolated via <code>CXAS_CATALOG</code>). Exit codes verified: <span class="badge ok">0 ok</span> <span class="badge err">1 runtime failure</span> <span class="badge warn">2 usage</span>.</p>
+
+  <h3>Discovery &amp; offline inspection</h3>
+  <table>
+    <thead><tr><th>Command</th><th>Result</th><th>Exit</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><code>cxas help</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>JSON envelope <code>{"ok":true,"command":"help",…}</code></td></tr>
+      <tr><td><code>cxas api list --filter evaluationRuns</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>4 v1beta evaluationRun methods; <code>--modelled --filter apps</code> returned 62 modelled methods</td></tr>
+      <tr><td><code>cxas api describe ces.projects.locations.apps.get</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>GET <code>v1/{+name}</code>, parameter <code>name</code></td></tr>
+      <tr><td><code>cxas api describe …agents.create --api-version v1beta</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>POST <code>v1beta/{+parent}/agents</code>, parameter <code>parent</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Local app lifecycle</h3>
+  <table>
+    <thead><tr><th>Command</th><th>Result</th><th>Exit</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><code>cxas init --app-dir my-app</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Created <code>app.yaml</code> + <code>agents/main/instruction.txt</code></td></tr>
+      <tr><td><code>cxas local create</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Alias of init</td></tr>
+      <tr><td><code>cxas lint --app-dir my-app</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>20 info diagnostics (V010–V029, optional files absent), error_count 0</td></tr>
+      <tr><td><code>cxas state --app-dir … --location us-central1 --project-id demo</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Content hash + profile; no location defaulting</td></tr>
+      <tr><td><code>cxas diff --app-dir … --app support-agent</code></td><td><span class="badge warn">EXPECTED FAIL</span></td><td>1</td><td><code>DRIFT</code> — local tree differs from remote; correct behavior, lists added/changed/removed</td></tr>
+      <tr><td><code>cxas agent / tool / guardrail --app-dir</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Run the lint rule registry over the app dir</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Catalog (offline resource verbs)</h3>
+  <table>
+    <thead><tr><th>Command</th><th>Result</th><th>Exit</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><code>cxas create --name "Support Agent" --app-id support-agent</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Recorded as <code>projects/demo/locations/us-central1/apps/support-agent</code></td></tr>
+      <tr><td><code>cxas apps list</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Lists catalog apps filtered by location/project</td></tr>
+      <tr><td><code>cxas apps get --app support-agent</code></td><td><span class="badge err">FOUND BUG</span></td><td>1</td><td><code>CES_NOT_FOUND</code> although the app exists — lookup matches full resource name or display name exactly, never the trailing id segment (see findings)</td></tr>
+      <tr><td><code>cxas branch --source … --new-name support-agent-v2</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>New catalog record</td></tr>
+      <tr><td><code>cxas push --app-dir … --app "Support Agent"</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Catalog-only; display name read, id defaults to <code>pushed</code></td></tr>
+      <tr><td><code>cxas delete --app support-agent</code></td><td><span class="badge err">FOUND BUG</span></td><td>0</td><td><code>"deleted": false</code> — same id-matching gap as <code>apps get</code>; returns success while deleting nothing</td></tr>
+      <tr><td><code>cxas deployments list / create / promote</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>create wrote version v1; promote flipped it to v2; list reflected it</td></tr>
+      <tr><td><code>cxas conversations list / get</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Offline stubs: empty list / empty turns</td></tr>
+      <tr><td><code>cxas versions list / compare</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Offline stubs</td></tr>
+      <tr><td><code>cxas insights</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Zero counters (offline)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Evaluations, CI &amp; workflows</h3>
+  <table>
+    <thead><tr><th>Command</th><th>Result</th><th>Exit</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><code>cxas evals report</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Summary with 0 passed/failed/errored</td></tr>
+      <tr><td><code>cxas export --evaluation-id eval-1</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Stub — no file written yet</td></tr>
+      <tr><td><code>cxas push-eval --file evals.yaml</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Records the eval file in the catalog</td></tr>
+      <tr><td><code>cxas run --wait</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Stub status <code>PASS</code>; live runs need a real project</td></tr>
+      <tr><td><code>cxas actions init --app-dir my-app</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Wrote <code>.github/workflows/test_local.yml</code> + <code>cleanup_local.yml</code> (env matrix from environment.json)</td></tr>
+      <tr><td><code>cxas init-github-action</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Same output as actions init; <code>--service-account</code>/<code>--workload-identity-provider</code> accepted but unused today</td></tr>
+      <tr><td><code>cxas ci-test / local-test</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Offline stubs (status PASS)</td></tr>
+      <tr><td><code>cxas test-tools / test-callbacks / test-single-callback</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>0 passed — no test files present in the scratch app</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Network-bound, gated &amp; error paths</h3>
+  <table>
+    <thead><tr><th>Command</th><th>Result</th><th>Exit</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td><code>cxas api call …get</code> (no param)</td><td><span class="badge warn">EXPECTED</span></td><td>2</td><td><code>MISSING_PARAMETER</code> — <em>named before anything is sent</em>, no network</td></tr>
+      <tr><td><code>cxas api call …get --param name=…</code></td><td><span class="badge warn">EXPECTED</span></td><td>1</td><td><strong>Real request reached Google</strong>: 403 SERVICE_DISABLED for project <code>demo</code>. Proof the transport, ADC token resolution, URL build and JSON error envelope all work</td></tr>
+      <tr><td><code>cxas api stream …streamRunSession</code> (no param)</td><td><span class="badge warn">EXPECTED</span></td><td>2</td><td><code>MISSING_PARAMETER</code>; live stream not run (would create session state — avoided)</td></tr>
+      <tr><td><code>cxas deploy</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Currently a no-op record of the args, not a real deployment</td></tr>
+      <tr><td><code>cxas migrate dfcx</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Local; returns display name</td></tr>
+      <tr><td><code>cxas trace</code></td><td><span class="badge ok">PASS</span></td><td>0</td><td>Empty turns offline</td></tr>
+      <tr><td><code>cxas pull</code> (missing required)</td><td><span class="badge warn">EXPECTED</span></td><td>2</td><td>Clap usage error wrapped in JSON envelope</td></tr>
+      <tr><td><code>cxas run-session</code></td><td><span class="badge warn">EXPECTED</span></td><td>2</td><td><code>TTY_REQUIRED</code> — needs an interactive terminal</td></tr>
+      <tr><td><code>cxas llm-lint</code></td><td><span class="badge warn">EXPECTED</span></td><td>2</td><td><code>FEATURE_DISABLED</code> — needs <code>--features llm</code></td></tr>
+      <tr><td><code>cxas</code> (no subcommand)</td><td><span class="badge warn">EXPECTED</span></td><td>2</td><td><code>USAGE</code> "a subcommand is required"</td></tr>
+      <tr><td><code>cxas frobnicate</code></td><td><span class="badge warn">EXPECTED</span></td><td>2</td><td>Unknown subcommand rejected</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <strong>Findings from the sweep.</strong>
+    <ol>
+      <li><strong><code>apps get</code> / <code>delete</code> id-matching gap</strong> — lookups compare against the full resource name or the display name, never the trailing id segment. <code>apps get --app support-agent</code> returns <code>CES_NOT_FOUND</code> for an app that exists, and <code>delete --app support-agent</code> returns <code>ok</code> with <code>"deleted": false</code>. Matching the final path segment (or the <code>--app-id</code> used at create time) would fix both.</li>
+      <li><strong>Live transport confirmed working</strong> — the 403 came back from Google's API gate, not from the client. That is exactly the honesty claim in the README: everything up to "project has the API enabled" is real; nothing in the test suite has ever faked it.</li>
+      <li><strong>Exit-code discipline holds</strong> — 0 ok / 1 runtime (<code>CES</code>, <code>DRIFT</code>, <code>CES_NOT_FOUND</code>) / 2 usage (<code>MISSING_PARAMETER</code>, <code>USAGE</code>, <code>TTY_REQUIRED</code>, <code>FEATURE_DISABLED</code>).</li>
+      <li><strong>Everything is JSON</strong> — even clap usage errors and credential failures come back as the same envelope. Scriptable without a parser beyond <code>jq</code>.</li>
+      <li><strong>Gated verbs are honest</strong> — <code>run-session</code> and <code>llm-lint</code> fail loudly with distinct codes rather than pretending to work.</li>
+    </ol>
+  </div>
+
+  <h2 id="agents">4 · Creating agents with cxas-harness</h2>
+  <p>Two paths exist: a local scaffold you author and lint (offline, works today), and a live CES-side create via the generic API surface (needs a real project with the CES API enabled — verified 403 on project <code>demo</code>).</p>
+
+  <h3>4.1 Local agent scaffold</h3>
+  <pre><code>cxas init --app-dir ./my-app        # app.yaml + agents/main/instruction.txt
+mkdir -p my-app/agents/billing
+echo "you are the billing agent, handle invoices" &gt; my-app/agents/billing/instruction.txt
+mkdir -p my-app/agents/support/tools
+cat &gt; my-app/agents/support/tools/order.yaml &lt;&lt;'EOF'
+name: check_order_status
+description: look up order status
+EOF
+echo "you are the support agent, resolve tickets" &gt; my-app/agents/support/instruction.txt
+cxas lint --app-dir my-app           # 0 errors; V0xx info diagnostics for optional files
+cxas agent --app-dir my-app          # {"ok":true,"error_count":0}</code></pre>
+  <p>The resulting tree (verified):</p>
+  <pre><code>my-app/
+  app.yaml
+  agents/
+    main/instruction.txt
+    billing/instruction.txt
+    support/instruction.txt
+    support/tools/order.yaml
+  .github/workflows/test_local.yml      # from `cxas actions init`
+  .github/workflows/cleanup_local.yml</code></pre>
+
+  <h3>4.2 Registering apps in the catalog</h3>
+  <pre><code>cxas create --name "Support Agent" --app-id support-agent \
+  --project-id demo --location us-central1        # {"name":"projects/demo/locations/us-central1/apps/support-agent"}
+cxas apps list --location us-central1 --project-id demo
+cxas branch --source support-agent --new-name support-agent-v2 \
+  --project-id demo --location us-central1
+cxas push --app-dir my-app --app "Support Agent" \
+  --project-id demo --location us-central1</code></pre>
+  <p>All of these persist to the catalog (<code>.cxas/catalog.json</code> or <code>$CXAS_CATALOG</code>) — a deterministic, inspectable local model of apps, deployments, conversations, versions and evaluations.</p>
+
+  <h3>4.3 Live agent creation against CES</h3>
+  <pre><code>cxas api describe ces.projects.locations.apps.agents.create --api-version v1beta
+# POST v1beta/{+parent}/agents, parameter: parent
+
+# Once a project has the CES API enabled + ADC authenticated:
+cxas api call ces.projects.locations.apps.agents.create \
+  --param parent=projects/REAL-PROJECT/locations/us-central1/apps/REAL-APP \
+  --body '{"display_name":"My Agent","instruction":"you are…"}'</code></pre>
+  <p>Run with the <code>demo</code> project this resolved credentials but returned Google's 403
+  <code>SERVICE_DISABLED</code> — the correct first step is enabling <code>ces.googleapis.com</code> on the project, then the same command works.</p>
+
+  <h2 id="gauntlet">5 · Is the Gauntlet Loop a proper implementation?</h2>
+  <p><strong>Verdict: yes — the core is properly implemented, and unusually honestly.</strong> The parts that are easy to fake (blindness, stop conditions) are enforced in code and covered by tests, all 32 of which pass. The loop was verified by reading <code>orchestrator.py</code>, <code>evidence.py</code>, the role prompts, and running its suite.</p>
+
+  <h3>5.1 What is genuinely right (and verified)</h3>
+  <table>
+    <thead><tr><th>Property</th><th>How it is enforced, not just claimed</th></tr></thead>
+    <tbody>
+      <tr><td>Blind critic</td><td><code>FORBIDDEN_KEYS</code> in <code>evidence.py</code> + <code>test_bundle_excludes_source_code</code> / <code>test_rendered_bundle_contains_no_rust_source</code> — source reaching a critic fails the suite</td></tr>
+      <tr><td>Builder cannot shape evidence</td><td>Bundle is built by deterministic code <em>after</em> the builder subprocess returns; the builder's stdout is discarded</td></tr>
+      <tr><td>Real stop conditions</td><td><code>max_rounds</code>, <code>max_agent_calls</code>, <code>rc_coverage_min</code> are read and enforced; a round that cannot afford both calls is not started; <code>test_stop_conditions.py</code> fails if <code>budget_usd</code> ever returns</td></tr>
+      <tr><td>Fail is fail</td><td>Unparseable critic output, empty output, missing agent binary, or timeout all resolve to a FAILED round — silence is not consent</td></tr>
+      <tr><td>Provider-agnostic</td><td>No SDK imported; <code>agent_cmd</code> is any stdin/stdout CLI</td></tr>
+      <tr><td>Reference that can fail</td><td>The benchmark is Google's own discovery documents (sha256-pinned); it already caught the <code>EvaluationRunState</code> enum drift that 78 green tests missed — the parity contract now checks both directions</td></tr>
+      <tr><td>Honest coverage reporting</td><td><code>CES-COVERAGE addressable v1=66/66 v1beta=104/104 total=170/170 modelled=37/170</code> — verified live; a reported number instead of a gated threshold</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 Gaps and improvements (ranked by value)</h3>
+  <ol>
+    <li>
+      <strong>Issue-repro evidence is missing from the bundle.</strong> The design doc and the critic prompt both say "assigned issues — is there evidence each is genuinely closed", but <code>evidence.py</code> only ships test/clippy output, upstream coverage counts, and binary size. It never runs an issue reproduction. The <em>entire reason the loop exists</em> is a test that passed while asserting the wrong enum — so the loop currently re-runs the same class of failure: a critic told "issue #284 is assigned" with no repro evidence can only take the builder's word through test names. <span class="badge ok">Fix: add a per-issue repro step to <code>build_bundle</code></span> (e.g. run the specific closing test with <code>--exact</code>, or a tiny per-issue script) and include pass/fail per issue number.
+    </li>
+    <li>
+      <strong>Worktree isolation is promised but not enforced.</strong> The spec says the builder works "in its own git worktree, committing before requesting critique"; the README warns "the builder edits your working tree". The orchestrator runs the builder directly against the repo. <span class="badge ok">Fix: have the orchestrator create a throwaway worktree per piece (or snapshot <code>git stash</code>/commit), so a bad builder can never corrupt the user's tree, and verify a commit exists before critiquing.</span>
+    </li>
+    <li>
+      <strong>Builder edit scope is unchecked.</strong> <code>builder.md</code> forbids touching <code>gauntlet/</code> or other crates, but nothing detects it. <span class="badge ok">Fix: in <code>evidence.py</code>, run <code>git diff --name-only</code> filtered to the piece's path — assert scope without leaking diff content (the blindness tests already keep content out; scope metadata is safe). An out-of-scope edit = automatic FAIL.</span>
+    </li>
+    <li>
+      <strong>Builder subprocess results are discarded.</strong> <code>invoke_agent</code> returns stdout that the builder call ignores; a builder that crashed (non-zero exit) still gets critiqued — a wasted round, and a crash with a partially-applied edit gets graded as if deliberate. <span class="badge ok">Fix: check the builder's returncode; a crash is a FAILED round, matching the critic-side discipline.</span>
+    </li>
+    <li>
+      <strong>Evidence shows upstream coverage, not per-piece progress.</strong> The critic sees "v1: 66 methods" — the same number every round regardless of what the builder did. <span class="badge ok">Fix: include the <code>CES-COVERAGE</code> line from <code>cargo test -p cxas-parity</code> and the modelled count, so a critic can see whether a piece actually moved the number.</span>
+    </li>
+    <li>
+      <strong>Binary size has no baseline.</strong> The critic is told to judge binary size "against the packaging goal of a lean static binary" but receives a raw byte count with no threshold or trend. <span class="badge ok">Fix: record previous-round size and a target; or drop it from the bundle until there is one.</span>
+    </li>
+    <li>
+      <strong>Score rubric has no anchors.</strong> A 0–100 score with no calibration can pass at 50 one round and fail at 80 the next. <span class="badge ok">Fix: give the critic prompt anchor definitions (e.g. 90+ = all issues evidenced + zero clippy, 70–89 = …) so scores are comparable across rounds and pieces.</span>
+    </li>
+    <li>
+      <strong>Pieces run sequentially.</strong> Nine crates × up to 8 rounds is fine to serialize, but the budget is shared and idle time adds up. <span class="badge ok">Fix: fan out pieces to concurrent workers against a shared <code>CallBudget</code> (a lock or a counter thread) — the budget math is already central.</span>
+    </li>
+    <li>
+      <strong>Per-call timeout is fixed at 1800s.</strong> A hung agent burns half an hour and a budget slot. <span class="badge ok">Fix: make the timeout configurable and shorter per role (builder typically needs more than critic).</span>
+    </li>
+    <li>
+      <strong><code>rc_coverage_min = 0</code> makes the RC gate vacuous today.</strong> A clean sweep below the bar correctly exits non-zero — but with the default 0, any sweep is a "release candidate". <span class="badge ok">Fix: set a real number (the design doc suggests the phase-3 gated subset) or fail loudly when the gate is 0.</span>
+    </li>
+  </ol>
+
+  <div class="callout note">
+    <strong>Honest framing.</strong> Items 1–3 are the ones that matter: they are exactly the kind of enforcement the loop already does well for blindness and budgets, applied to the remaining "claimed but not enforced" surfaces. The rest are ergonomics. The design's own amendment history (<code>budget_usd</code> → <code>max_agent_calls</code>) shows the project already treats "documented but unenforced" as the enemy — these are the next instances of it.
+  </div>
+
+  <h2 id="quickstart">6 · Quickstart</h2>
+  <pre><code>cargo build -p cxas-cli                       # build
+./target/debug/cxas --help                    # 36 commands
+cxas init --app-dir ./my-app                  # scaffold an agent app
+cxas lint --app-dir ./my-app                  # deterministic lint
+cxas api list --filter evaluationRuns         # offline method table
+cxas api call ces.projects.locations.apps.list \
+  --param parent=projects/$PROJECT/locations/$LOC  # live, needs ADC + enabled API
+
+python -m pytest gauntlet/tests -q            # 32 tests, verifies the loop itself
+python gauntlet/orchestrator.py cxas-proto    # one-piece Gauntlet run (costs tokens)</code></pre>
+
+  <div class="footer">
+    Generated 2026-08-16 from a live run of cxas-harness (commit <code>master</code>@head, workspace build clean).
+    No source code was modified to produce this report; all commands ran against an isolated scratch catalog (<code>CXAS_CATALOG=/tmp/cxas-demo/catalog.json</code>).
+    cxas-scrapi facts from github.com/GoogleCloudPlatform/cxas-scrapi and its docs site (stable).
+  </div>
+</div>
+</body>
+</html>

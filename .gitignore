@@ -10,3 +10,23 @@ __pycache__/
 .vscode/
 *.swp
 gauntlet/runs/
+
+# Python virtual environments. A committed .venv is 400+ MB of platform-specific
+# binaries that git can never forget, and that nobody can use on another OS.
+.venv/
+**/.venv/
+venv/
+
+# Demo-video render artifacts. All regenerable from scenes.py + narration.py:
+# audio/ is ~95 MB of intermediate wavs, media/ is manim's partial-movie cache.
+# The sources are worth keeping; the renders are worth rebuilding.
+cxas-demo-video/audio/
+cxas-demo-video/media/
+cxas-demo-video/manim-mcp-server/src/media/
+
+# Rendered demo videos and the vendored manim MCP server. The videos rebuild
+# from scenes.py + narration.py; 18 MB of binary that git can never forget is a
+# permanent cost for an artifact better attached to a release. The MCP server is
+# a third-party copy with its own licence and belongs as a dependency.
+cxas-demo-video/*.mp4
+cxas-demo-video/manim-mcp-server/

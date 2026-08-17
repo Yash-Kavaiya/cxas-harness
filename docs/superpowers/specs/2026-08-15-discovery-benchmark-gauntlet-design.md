@@ -197,7 +197,14 @@ providers is a one-line config change.
 
 - *Orchestrator* — decomposes, dispatches, merges. It is the only role with merge
   authority and it never writes crate code.
-- *Builder* — one per piece, working in its own git worktree, committing before
+- *Builder* — one per piece, editing that crate only. **Amended 2026-08-16:**
+  this originally specified an isolated git worktree with a commit before
+  critique. That was never implemented; the orchestrator runs the builder
+  against the working tree directly. Rather than leave the spec describing a
+  containment guarantee nobody had built, the claim is withdrawn: run the loop
+  on a branch with a clean tree, and read `git diff` afterwards. Scope is now
+  reported to the critic as paths, so an out-of-scope edit is at least visible.
+  Original text: one per piece, working in its own git worktree, committing before
   requesting critique so failures stay isolated.
 - *Critic* — receives an evidence bundle and nothing else.
 

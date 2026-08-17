@@ -35,8 +35,19 @@ the critic sees.
 | `cargo test` output | crate source code |
 | `cargo clippy` output | the diff |
 | CES discovery coverage and revisions | commit messages |
-| assigned-issue reproductions | the builder's rationale |
+| per-issue rows: which annotated tests cite the issue, and whether each ran | the builder's rationale |
+| changed file **paths**, split in-scope / out-of-scope | changed file *contents* |
 | binary size | any self-assessment |
+
+Scope is reported as paths only. A file name says *where* a change landed
+without saying what it was, so the blindness guarantee survives while
+`builder.md`'s "edit only your own crate" rule becomes checkable instead of
+merely stated.
+
+The per-issue rows deliberately claim less than they might. "A test citing #284
+passed" is not "#284 is closed" — that exact test passed for months while
+asserting an enum CES has never used — and the rendered bundle tells the critic
+so in as many words.
 
 That blindness is asserted, not merely documented:
 `test_bundle_excludes_source_code` and `test_rendered_bundle_contains_no_rust_source`

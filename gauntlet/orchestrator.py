@@ -54,10 +54,15 @@ def parse_verdict(text):
     return {"score": 0, "verdict": "FAIL", "biggest_gap": "unparseable critic response"}
 
 
-def invoke_agent(agent_cmd, prompt, timeout=1800):
+def invoke_agent_result(agent_cmd, prompt, timeout=1800):
     """Run any agent CLI that reads stdin and writes stdout.
 
     No provider SDK is imported; swapping providers is a config change.
+
+    Returns the exit status alongside the output. The builder's status used to
+    be discarded, so an agent that crashed halfway through an edit was
+    critiqued as though it had stopped deliberately -- a wasted round, and a
+    partially-applied edit graded as intent.
     """
     try:
         proc = subprocess.run(
@@ -67,11 +72,20 @@ def invoke_agent(agent_cmd, prompt, timeout=1800):
             text=True,
             timeout=timeout,
         )
-        return proc.stdout
+        return {
+            "ok": proc.returncode == 0,
+            "stdout": proc.stdout,
+            "detail": "" if proc.returncode == 0 else f"exit code {proc.returncode}",
+        }
     except (FileNotFoundError, OSError, subprocess.TimeoutExpired) as exc:
-        # Returns prose, not JSON, so parse_verdict resolves it to FAIL. A
-        # missing or hung agent must never read as a passing critique.
-        return f"agent invocation failed: {exc}"
+        return {"ok": False, "stdout": f"agent invocation failed: {exc}", "detail": str(exc)}
+
+
+def invoke_agent(agent_cmd, prompt, timeout=1800):
+    """Output only. A failed invocation returns prose, not JSON, so
+    `parse_verdict` resolves it to FAIL: a missing or hung agent must never
+    read as a passing critique."""
+    return invoke_agent_result(agent_cmd, prompt, timeout)["stdout"]
 
 
 def _role_prompt(name, fallback):
@@ -161,7 +175,19 @@ def run_piece(piece, config, repo_root, run_dir, budget=None):
             + (f"Top-priority fix from the critic: {gap}\n" if gap else "")
         )
         budget.spend()
-        invoke_agent(agent_cmd, builder_prompt)
+        built = invoke_agent_result(agent_cmd, builder_prompt)
+        if not built["ok"]:
+            # A crashed builder is a failed round, matching the discipline
+            # already applied to the critic. Critiquing a half-applied edit
+            # grades an accident as though it were a decision.
+            verdict = {
+                "verdict": "FAIL",
+                "score": 0,
+                "biggest_gap": f"builder invocation failed: {built['detail']}",
+            }
+            history.append({"round": round_no, "builder_failed": True, **verdict})
+            print(f"[{piece}] round {round_no}: builder failed -- {built['detail']}")
+            continue
 
         # Evidence is collected by code, after the builder has finished, so the
         # builder cannot shape what the critic sees.

@@ -109,3 +109,36 @@ def test_missing_agent_binary_never_counts_as_pass(tmp_path):
         "cxas-proto", _config(agent_cmd="definitely-not-an-agent-binary", max_rounds=1), ROOT, tmp_path
     )
     assert result["verdict"] == "FAIL"
+
+
+def test_a_crashed_builder_is_a_failed_round_not_a_critiqued_one(tmp_path):
+    # The builder's exit status used to be discarded, so an agent that died
+    # halfway through an edit was critiqued as though it had stopped
+    # deliberately: a wasted round, and a partially-applied edit graded as
+    # intent. The critic side has always had this discipline; the builder side
+    # now matches it.
+    os.environ["GAUNTLET_STUB_MODE"] = "crash"
+    try:
+        result = run_piece("cxas-proto", _config(max_rounds=2), ROOT, tmp_path)
+    finally:
+        os.environ["GAUNTLET_STUB_MODE"] = "pass"
+
+    assert result["verdict"] == "FAIL"
+    assert any(r.get("builder_failed") for r in result["history"]), result["history"]
+    assert "builder invocation failed" in result["biggest_gap"]
+
+
+def test_a_crashed_builder_does_not_burn_the_critic_call(tmp_path):
+    # Two calls per round are budgeted; a round that never reaches the critic
+    # must not be charged for one.
+    from gauntlet.orchestrator import CallBudget
+
+    os.environ["GAUNTLET_STUB_MODE"] = "crash"
+    budget = CallBudget(6)
+    try:
+        run_piece("cxas-proto", _config(max_rounds=3), ROOT, tmp_path, budget=budget)
+    finally:
+        os.environ["GAUNTLET_STUB_MODE"] = "pass"
+
+    # Three rounds, builder only: three calls, not six.
+    assert budget.used == 3, budget.used
